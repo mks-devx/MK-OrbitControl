@@ -116,12 +116,12 @@ struct PeakData {
     mutating func updateSmooth() {
         let rawL = level(at: 0)
         let rawR = level(at: 1)
-        // Fast attack, slow decay
-        if rawL > smoothL { smoothL = rawL } else { smoothL = smoothL * 0.65 + rawL * 0.35 }
-        if rawR > smoothR { smoothR = rawR } else { smoothR = smoothR * 0.65 + rawR * 0.35 }
-        // Peak hold — jumps up, falls very slowly
-        if rawL > peakHoldL { peakHoldL = rawL } else { peakHoldL = max(0, peakHoldL - 0.02) }
-        if rawR > peakHoldR { peakHoldR = rawR } else { peakHoldR = max(0, peakHoldR - 0.02) }
+        // Fast attack, fast decay (responsive to beats)
+        if rawL > smoothL { smoothL = rawL } else { smoothL = rawL * 0.8 + smoothL * 0.2 }
+        if rawR > smoothR { smoothR = rawR } else { smoothR = rawR * 0.8 + smoothR * 0.2 }
+        // Peak hold — jumps up, drops steadily
+        if rawL > peakHoldL { peakHoldL = rawL } else { peakHoldL = max(0, peakHoldL - 0.05) }
+        if rawR > peakHoldR { peakHoldR = rawR } else { peakHoldR = max(0, peakHoldR - 0.05) }
     }
 }
 

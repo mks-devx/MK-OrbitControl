@@ -426,7 +426,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("MK-OrbitControl")
                                 .font(.system(size: 18, weight: .bold))
-                            Text("Version 1.1")
+                            Text("Version 1.2")
                                 .font(.system(size: 13))
                                 .foregroundColor(.secondary)
                         }
