@@ -39,7 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             DispatchQueue.main.async {
                 self?.popover?.contentSize = mini
                     ? NSSize(width: 220, height: 90)
-                    : NSSize(width: 280, height: 434)
+                    : NSSize(width: 280, height: 480)
             }
         }
 
@@ -84,7 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupPopover() {
         let popover = NSPopover()
-        popover.contentSize = NSSize(width: 280, height: 434)
+        popover.contentSize = NSSize(width: 280, height: 480)
         popover.behavior = .transient
         popover.animates = true
 

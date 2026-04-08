@@ -417,8 +417,31 @@ struct MenuBarView: View {
             }
             .padding(.top, 6)
 
-            // Footer
-            HStack(spacing: 16) {
+            // Footer — two rows for breathing room
+            VStack(spacing: 8) {
+                // Row 1: Mode buttons
+                HStack(spacing: 6) {
+                    footerButton(icon: "arrow.down.right.and.arrow.up.left", label: "Mini", action: {
+                        deviceState.miniMode = true
+                    })
+                    footerButton(icon: "macwindow", label: "Float", action: {
+                        FloatingWindowController.shared.toggle(
+                            deviceState: deviceState,
+                            presetManager: presetManager,
+                            themeManager: themeManager,
+                            commander: commander,
+                            onOpenSettings: { onOpenSettings?() }
+                        )
+                    })
+                    footerButton(icon: "gearshape", label: "Settings", action: {
+                        onOpenSettings?()
+                    })
+                    footerButton(icon: "power", label: "Quit", action: {
+                        NSApplication.shared.terminate(nil)
+                    })
+                }
+
+                // Row 2: Support
                 Button {
                     if let url = URL(string: "https://buymeacoffee.com/mk_tools") {
                         openURL(url)
@@ -426,65 +449,19 @@ struct MenuBarView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Text("☕")
-                            .font(f.font(size: 10))
-                        Text("Support")
                             .font(f.font(size: 9))
+                        Text("Buy me a coffee")
+                            .font(f.font(size: 8))
                     }
                     .foregroundColor(t.textDim)
                 }
                 .buttonStyle(.plain)
-
-                Spacer()
-
-                Button {
-                    deviceState.miniMode = true
-                } label: {
-                    Image(systemName: "arrow.down.right.and.arrow.up.left")
-                        .font(f.font(size: 10))
-                        .foregroundColor(t.textDim)
-                }
-                .buttonStyle(.plain)
-                .help("Mini mode")
-
-                Button {
-                    FloatingWindowController.shared.toggle(
-                        deviceState: deviceState,
-                        presetManager: presetManager,
-                        themeManager: themeManager,
-                        commander: commander,
-                        onOpenSettings: { onOpenSettings?() }
-                    )
-                } label: {
-                    Image(systemName: FloatingWindowController.shared.visible ? "macwindow.on.rectangle" : "macwindow")
-                        .font(f.font(size: 10))
-                        .foregroundColor(t.textDim)
-                }
-                .buttonStyle(.plain)
-                .help("Floating window")
-
-                Button {
-                    onOpenSettings?()
-                } label: {
-                    Image(systemName: "gearshape")
-                        .font(f.font(size: 11))
-                        .foregroundColor(t.textDim)
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    NSApplication.shared.terminate(nil)
-                } label: {
-                    Image(systemName: "power")
-                        .font(f.font(size: 10))
-                        .foregroundColor(t.textDim)
-                }
-                .buttonStyle(.plain)
             }
             .padding(.horizontal, 20)
-            .padding(.top, 6)
+            .padding(.top, 8)
             .padding(.bottom, 10)
         }
-        .frame(width: 280, height: 434)
+        .frame(width: 280, height: 480)
         .background {
             if t.useMaterial {
                 Rectangle().fill(.ultraThinMaterial).opacity(0.85)
@@ -622,6 +599,22 @@ struct MenuBarView: View {
             }
             .frame(height: 4)
         }
+    }
+
+    private func footerButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                Text(label)
+                    .font(f.font(size: 8))
+            }
+            .foregroundColor(t.textDim)
+            .frame(maxWidth: .infinity, minHeight: 38)
+            .background(Color.white.opacity(0.04))
+            .cornerRadius(6)
+        }
+        .buttonStyle(.plain)
     }
 
     private func scheduleVolumeCommand(value: Int, delay: TimeInterval) {
