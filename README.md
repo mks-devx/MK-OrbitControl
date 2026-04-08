@@ -4,6 +4,10 @@ Menu bar monitor controller for Antelope Synergy Core audio interfaces.
 
 Quick access to volume, mute, dim, mono, and output selection — directly from your macOS menu bar.
 
+<p align="center">
+  <img src="screenshot.png" alt="MK-OrbitControl" width="280">
+</p>
+
 ## Tested Hardware
 
 | Device | Status |
