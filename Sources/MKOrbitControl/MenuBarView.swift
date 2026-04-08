@@ -453,7 +453,7 @@ struct MenuBarView: View {
                     HStack(spacing: 4) {
                         Text("☕")
                             .font(f.font(size: 9))
-                        Text("Buy me a coffee")
+                        Text("Fuel the code ☕")
                             .font(f.font(size: 8))
                     }
                     .foregroundColor(t.textDim)

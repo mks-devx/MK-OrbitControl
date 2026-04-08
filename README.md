@@ -5,8 +5,13 @@ Menu bar monitor controller for Antelope Synergy Core audio interfaces.
 Quick access to volume, mute, dim, mono, and output selection — directly from your macOS menu bar.
 
 <p align="center">
-  <img src="screenshot.png" alt="MK-OrbitControl" width="280">
+  <img src="screenshots/main.png" alt="MK-OrbitControl" width="260">
+  &nbsp;&nbsp;
+  <img src="screenshots/floating.png" alt="Floating Window" width="260">
+  &nbsp;&nbsp;
+  <img src="screenshots/mini.png" alt="Mini Mode" width="220">
 </p>
+<p align="center"><em>Diablo theme · Floating window · Mini mode</em></p>
 
 ## Tested Hardware
 
@@ -110,6 +115,6 @@ MIT License — see [LICENSE](LICENSE)
 
 ## Support
 
-If you find this useful, consider buying me a coffee:
+Like it? Saved you from clicking through the Control Panel one more time? Want to fund the next feature (Stream Deck support, maybe)?
 
-☕ [https://buymeacoffee.com/mk_tools](https://buymeacoffee.com/mk_tools)
+☕ [Buy me a coffee — I'll turn the caffeine into code](https://buymeacoffee.com/mk_tools)

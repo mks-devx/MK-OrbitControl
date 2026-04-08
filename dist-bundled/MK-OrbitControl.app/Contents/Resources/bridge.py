@@ -31,28 +31,75 @@ def find_device():
     """Auto-detect device slug and report format from Antelope installation."""
     base = "/Users/Shared/.AntelopeAudio"
     if not os.path.exists(base):
-        return None, None, None
+        return None, None, None, None
 
     for entry in os.listdir(base):
         panels_dir = os.path.join(base, entry, "panels")
         if not os.path.isdir(panels_dir):
             continue
-        # Skip non-device dirs
         if entry in ("managerserver", "antelopelauncher"):
             continue
-        # Find report format
         for f in sorted(os.listdir(panels_dir), reverse=True):
             if f.startswith("report_format_"):
                 rf_path = os.path.join(panels_dir, f)
-                return entry, rf_path, entry.replace("_", "")
-    return None, None, None
+                # Get device name and serial from admin server
+                dev_name, serial = get_device_info_from_server()
+                if not dev_name:
+                    dev_name = entry
+                if not serial:
+                    serial = "0000000000000"
+                return entry, rf_path, dev_name, serial
+    return None, None, None, None
 
 
-DEVICE_SLUG, REPORT_FORMAT_PATH, DEVICE_NAME = find_device()
+def get_device_info_from_server():
+    """Read device name and serial from the admin server welcome message."""
+    for port in [2020, 2021, 2022, 2023, 2024, 2025]:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(2)
+            s.connect((SERVER_HOST, port))
+            h = s.recv(4)
+            if len(h) < 4:
+                s.close()
+                continue
+            length = struct.unpack(">I", h)[0]
+            data = b""
+            while len(data) < length:
+                chunk = s.recv(min(8192, length - len(data)))
+                if not chunk:
+                    break
+                data += chunk
+            s.close()
+            text = data.decode("utf-8", errors="replace")
+            if "notification" in text and "Plugged devices" in text:
+                # Parse device name and serial
+                # Format: "DeviceName with SN:1234567890"
+                import re
+                # Parse JSON to get the contents text
+                try:
+                    import json as _json
+                    msg = _json.loads(text[:text.rindex('}') + 1])
+                    contents = msg.get("contents", text)
+                except Exception:
+                    contents = text
+                match = re.search(r"([A-Za-z][A-Za-z0-9_]+)\s+with\s+SN:(\d+)", contents)
+                if match:
+                    return match.group(1), match.group(2)
+        except Exception:
+            try:
+                s.close()
+            except Exception:
+                pass
+    return None, None
+
+
+DEVICE_SLUG, REPORT_FORMAT_PATH, DEVICE_NAME, DEVICE_SERIAL = find_device()
 if not DEVICE_SLUG:
     DEVICE_SLUG = "orionstudioiii"
     REPORT_FORMAT_PATH = "/Users/Shared/.AntelopeAudio/orionstudioiii/panels/report_format_2.3.1"
     DEVICE_NAME = "OrionStudio_III"
+    DEVICE_SERIAL = "0000000000000"
 
 
 def setup_environment():
@@ -98,16 +145,17 @@ def fix_circular_imports():
 
 
 class FakeServiceInfo:
-    def __init__(self, host=SERVER_HOST, port=2021, serial="2913921000101"):
+    def __init__(self, host=SERVER_HOST, port=2021, serial=None):
         self.port = port
         self.name = DEVICE_NAME + "._antelope_control._tcp.local."
         self.type = "_antelope_control._tcp.local."
         self.ip = host
         self.server = host
         self.address = socket.inet_aton(host)
+        actual_serial = serial or DEVICE_SERIAL
         self.properties = {
             "device_name": DEVICE_NAME,
-            "serial_number": serial,
+            "serial_number": actual_serial,
             "hardware_version": "1.0",
             "firmware_version": "1.0",
             "connection_type": "usb",
