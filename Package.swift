@@ -2,16 +2,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "MKAntelopeControl",
+    name: "MKOrbitControl",
     platforms: [.macOS(.v13)],
     dependencies: [
         .package(url: "https://github.com/soffes/HotKey", from: "0.2.1"),
     ],
     targets: [
         .executableTarget(
-            name: "MKAntelopeControl",
+            name: "MKOrbitControl",
             dependencies: ["HotKey"],
-            path: "Sources/MKAntelopeControl"
+            path: "Sources/MKOrbitControl"
         )
     ]
 )

@@ -150,7 +150,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingView = NSHostingView(rootView: settingsView)
 
         let win = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 560),
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 450),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
