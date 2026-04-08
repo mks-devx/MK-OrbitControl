@@ -31,10 +31,12 @@ Quick access to volume, mute, dim, mono, and output selection — directly from 
 - **Peak meters** (L/R with smooth decay)
 - **Global hotkeys** (configurable per output, works from any app)
 - **Volume HUD overlay** on hotkey press
+- **Mini mode** (compact popover — just slider, mute, output selector)
 - **12 themes** (Crimson, Midnight, Cyber, Diablo, Nova, Aether, Flux, and more)
 - **8 fonts** (System, Hack, Fira Code, JetBrains Mono, Dot Matrix, and more)
 - **9 menu bar icons** (Atom, Pulsar, Waveform, and more)
 - **Auto device detection** (no manual configuration needed)
+- **Auto update checker** (checks GitHub releases daily)
 
 ## Requirements
 
