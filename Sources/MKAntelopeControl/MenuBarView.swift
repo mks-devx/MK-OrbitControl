@@ -447,6 +447,22 @@ struct MenuBarView: View {
                 .help("Mini mode")
 
                 Button {
+                    FloatingWindowController.shared.toggle(
+                        deviceState: deviceState,
+                        presetManager: presetManager,
+                        themeManager: themeManager,
+                        commander: commander,
+                        onOpenSettings: { onOpenSettings?() }
+                    )
+                } label: {
+                    Image(systemName: FloatingWindowController.shared.visible ? "macwindow.on.rectangle" : "macwindow")
+                        .font(f.font(size: 10))
+                        .foregroundColor(t.textDim)
+                }
+                .buttonStyle(.plain)
+                .help("Floating window")
+
+                Button {
                     onOpenSettings?()
                 } label: {
                     Image(systemName: "gearshape")
