@@ -351,7 +351,7 @@ struct SettingsView: View {
 
                     HStack(spacing: 12) {
                         Button("Check for Updates") {
-                            UpdateChecker.shared.check()
+                            UpdateChecker.shared.checkManually()
                         }
                         .controlSize(.small)
 
