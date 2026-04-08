@@ -30,6 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateReader = reader
         reader.start()
         commander.startDaemon()
+        UpdateChecker.shared.checkOnLaunch()
 
         // Set up HotkeyManager
         let hm = HotkeyManager(commander: commander, deviceState: deviceState)

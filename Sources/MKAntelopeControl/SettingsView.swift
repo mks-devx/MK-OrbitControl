@@ -283,21 +283,29 @@ struct SettingsView: View {
                     Text("Not affiliated with Antelope Audio")
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
-                }
-                Spacer()
-                Button {
-                    if let url = URL(string: "https://buymeacoffee.com/mk_tools") {
-                        NSWorkspace.shared.open(url)
+
+                    HStack(spacing: 12) {
+                        Button("Check for Updates") {
+                            UpdateChecker.shared.check()
+                        }
+                        .controlSize(.small)
+
+                        Button {
+                            if let url = URL(string: "https://buymeacoffee.com/mk_tools") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text("☕")
+                                    .font(.system(size: 12))
+                                Text("Support")
+                                    .font(.system(size: 12))
+                            }
+                        }
+                        .controlSize(.small)
                     }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("☕")
-                            .font(.system(size: 12))
-                        Text("Buy me a coffee")
-                            .font(.system(size: 12))
-                    }
+                    .padding(.top, 4)
                 }
-                .controlSize(.small)
             }
         }
     }
