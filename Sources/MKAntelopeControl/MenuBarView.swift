@@ -145,15 +145,20 @@ struct MenuBarView: View {
             .frame(height: 14)
             .padding(.horizontal, 14)
 
-            // Output dots + expand button
-            HStack(spacing: 10) {
+            // Output selector + expand
+            HStack(spacing: 4) {
                 ForEach(OutputChannel.displayOrder) { ch in
+                    let isSelected = deviceState.selectedOutput == ch
                     Button {
                         deviceState.selectedOutput = ch
                     } label: {
-                        Circle()
-                            .fill(deviceState.selectedOutput == ch ? t.accent : Color.white.opacity(0.15))
-                            .frame(width: 6, height: 6)
+                        Text(ch.label)
+                            .font(f.font(size: 8, weight: isSelected ? .bold : .regular))
+                            .foregroundColor(isSelected ? t.accent : t.textDim)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(isSelected ? t.accent.opacity(0.15) : Color.clear)
+                            .cornerRadius(3)
                     }
                     .buttonStyle(.plain)
                 }
@@ -167,7 +172,7 @@ struct MenuBarView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 12)
         }
         .padding(.vertical, 10)
         .frame(width: 220, height: 90)

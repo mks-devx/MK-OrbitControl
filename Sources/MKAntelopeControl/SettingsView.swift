@@ -277,7 +277,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("MK-OrbitControl")
                         .font(.system(size: 13, weight: .semibold))
-                    Text("Version 1.0")
+                    Text("Version 1.1")
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                     Text("Not affiliated with Antelope Audio")
