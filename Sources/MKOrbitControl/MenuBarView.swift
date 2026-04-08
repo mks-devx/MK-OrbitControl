@@ -349,8 +349,8 @@ struct MenuBarView: View {
 
             // Peak meters — horizontal L/R with smooth decay
             VStack(spacing: 2) {
-                peakMeterRow(label: "L", level: deviceState.peaks.smoothL)
-                peakMeterRow(label: "R", level: deviceState.peaks.smoothR)
+                peakMeterRow(label: "L", level: deviceState.peaks.smoothL, peakHold: deviceState.peaks.peakHoldL)
+                peakMeterRow(label: "R", level: deviceState.peaks.smoothR, peakHold: deviceState.peaks.peakHoldR)
             }
             .padding(.horizontal, 24)
             .padding(.top, 6)
@@ -575,7 +575,7 @@ struct MenuBarView: View {
         }
     }
 
-    private func peakMeterRow(label: String, level: Double) -> some View {
+    private func peakMeterRow(label: String, level: Double, peakHold: Double = 0) -> some View {
         HStack(spacing: 4) {
             Text(label)
                 .font(f.font(size: 7, weight: .bold))
@@ -584,11 +584,11 @@ struct MenuBarView: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     // Track
-                    RoundedRectangle(cornerRadius: 1.5)
+                    RoundedRectangle(cornerRadius: 2)
                         .fill(Color.white.opacity(0.05))
-                        .frame(height: 4)
-                    // Filled — themed gradient
-                    RoundedRectangle(cornerRadius: 1.5)
+                        .frame(height: 6)
+                    // Filled bar
+                    RoundedRectangle(cornerRadius: 2)
                         .fill(
                             LinearGradient(
                                 colors: t.meterGradient,
@@ -596,11 +596,19 @@ struct MenuBarView: View {
                                 endPoint: .trailing
                             )
                         )
-                        .frame(width: geo.size.width * level, height: 4)
+                        .frame(width: geo.size.width * level, height: 6)
                         .animation(.linear(duration: 0.05), value: level)
+                    // Peak hold indicator
+                    if peakHold > 0.01 {
+                        Rectangle()
+                            .fill(Color.white.opacity(0.8))
+                            .frame(width: 2, height: 6)
+                            .offset(x: geo.size.width * peakHold - 1)
+                            .animation(.linear(duration: 0.05), value: peakHold)
+                    }
                 }
             }
-            .frame(height: 4)
+            .frame(height: 6)
         }
     }
 

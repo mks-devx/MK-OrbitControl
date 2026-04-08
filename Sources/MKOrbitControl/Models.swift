@@ -103,8 +103,9 @@ struct PeakData {
     var levels: [Int] = Array(repeating: 96, count: 32) // 96 = silence
     var smoothL: Double = 0
     var smoothR: Double = 0
+    var peakHoldL: Double = 0
+    var peakHoldR: Double = 0
 
-    /// Get level as 0.0-1.0 (0 = silence, 1 = max)
     func level(at index: Int) -> Double {
         guard index < levels.count else { return 0 }
         let raw = levels[index]
@@ -112,15 +113,15 @@ struct PeakData {
         return Double(96 - raw) / 96.0
     }
 
-    /// Update with fast attack, slow decay
     mutating func updateSmooth() {
         let rawL = level(at: 0)
         let rawR = level(at: 1)
-        // Fast attack
-        if rawL > smoothL { smoothL = rawL }
-        else { smoothL = smoothL * 0.7 + rawL * 0.3 } // slow decay
-        if rawR > smoothR { smoothR = rawR }
-        else { smoothR = smoothR * 0.7 + rawR * 0.3 }
+        // Fast attack, slow decay
+        if rawL > smoothL { smoothL = rawL } else { smoothL = smoothL * 0.65 + rawL * 0.35 }
+        if rawR > smoothR { smoothR = rawR } else { smoothR = smoothR * 0.65 + rawR * 0.35 }
+        // Peak hold — jumps up, falls very slowly
+        if rawL > peakHoldL { peakHoldL = rawL } else { peakHoldL = max(0, peakHoldL - 0.02) }
+        if rawR > peakHoldR { peakHoldR = rawR } else { peakHoldR = max(0, peakHoldR - 0.02) }
     }
 }
 
