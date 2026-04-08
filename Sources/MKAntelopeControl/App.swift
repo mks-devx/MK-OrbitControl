@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let commander = AntelopeCommander()
     private let presetManager = PresetManager()
     private let themeManager = ThemeManager()
+    private var midiManager: MIDIManager?
     private var stateReader: AntelopeStateReader?
 
     private var hotkeyManager: HotkeyManager?
@@ -30,6 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateReader = reader
         reader.start()
         commander.startDaemon()
+        midiManager = MIDIManager(commander: commander, deviceState: deviceState)
         UpdateChecker.shared.checkOnLaunch()
 
         // Watch for mini mode changes to resize popover
@@ -144,7 +146,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let observable = hotkeyManagerObservable else { return }
         observable.refresh()
 
-        let settingsView = SettingsView(hotkeyManager: observable, themeManager: themeManager, deviceState: deviceState)
+        let settingsView = SettingsView(hotkeyManager: observable, themeManager: themeManager, deviceState: deviceState, midiManager: midiManager ?? MIDIManager(commander: commander, deviceState: deviceState))
         let hostingView = NSHostingView(rootView: settingsView)
 
         let win = NSWindow(

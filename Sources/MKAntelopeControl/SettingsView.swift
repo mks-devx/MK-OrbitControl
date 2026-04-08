@@ -7,6 +7,7 @@ struct SettingsView: View {
     @ObservedObject var hotkeyManager: HotkeyManagerObservable
     @ObservedObject var themeManager: ThemeManager
     @ObservedObject var deviceState: DeviceState
+    @ObservedObject var midiManager: MIDIManager
 
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
@@ -30,6 +31,7 @@ struct SettingsView: View {
                     appearanceSection
                     generalSection
                     hotkeysSection
+                    midiSection
                     aboutSection
                 }
                 .padding(20)
@@ -265,6 +267,69 @@ struct SettingsView: View {
             RoundedRectangle(cornerRadius: 8)
                 .stroke(Color.orange.opacity(0.3), lineWidth: 0.5)
         )
+    }
+
+    // MARK: - MIDI
+
+    private var midiSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                sectionHeader("MIDI Learn")
+                Spacer()
+                if !midiManager.lastReceivedCC.isEmpty {
+                    Text("Last: \(midiManager.lastReceivedCC)")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            if midiManager.isLearning {
+                HStack {
+                    Text("Move a MIDI knob/fader...")
+                        .font(.system(size: 12))
+                        .foregroundColor(.orange)
+                    Spacer()
+                    Button("Cancel") {
+                        midiManager.cancelLearn()
+                    }
+                    .controlSize(.small)
+                }
+                .padding(8)
+                .background(Color.orange.opacity(0.1))
+                .cornerRadius(6)
+            }
+
+            ForEach(MIDIAction.allCases, id: \.rawValue) { action in
+                settingsRow {
+                    Text(action.displayName)
+                        .font(.system(size: 12))
+                    Spacer()
+                    if let mapping = midiManager.getMapping(for: action) {
+                        Text("Ch\(mapping.channel + 1) CC\(mapping.cc)")
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .cornerRadius(4)
+                        Button {
+                            midiManager.removeMapping(for: action)
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Button(midiManager.learningAction == action ? "Listening..." : "Learn") {
+                            midiManager.startLearn(for: action)
+                        }
+                        .controlSize(.small)
+                        .disabled(midiManager.isLearning && midiManager.learningAction != action)
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - About

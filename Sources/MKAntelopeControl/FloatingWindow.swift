@@ -32,7 +32,7 @@ class FloatingWindowController {
 
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 280, height: 434),
-            styleMask: [.borderless, .nonactivatingPanel, .hudWindow],
+            styleMask: [.titled, .closable, .nonactivatingPanel, .hudWindow],
             backing: .buffered,
             defer: false
         )
@@ -40,8 +40,11 @@ class FloatingWindowController {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
-        panel.isMovableByWindowBackground = true
+        panel.isMovableByWindowBackground = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.title = "MK-OrbitControl"
+        panel.titlebarAppearsTransparent = true
+        panel.titleVisibility = .hidden
         panel.contentView = hosting
         panel.center()
         panel.orderFrontRegardless()
