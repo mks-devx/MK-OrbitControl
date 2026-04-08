@@ -32,6 +32,7 @@ struct MenuBarView: View {
     @State private var sliderValue: Double = 0
     @State private var isUserDragging: Bool = false
     @State private var pendingSentValue: Int? = nil
+    @State private var knobDragStart: Double = 0
     @State private var volumeDebounceTimer: Timer? = nil
 
     // Volume mapping
@@ -286,10 +287,12 @@ struct MenuBarView: View {
             .gesture(
                 DragGesture(minimumDistance: 1)
                     .onChanged { value in
-                        if !isUserDragging { isUserDragging = true }
+                        if !isUserDragging {
+                            isUserDragging = true
+                            knobDragStart = sliderValue
+                        }
                         let delta = (value.translation.width - value.translation.height) / 4.0
-                        let base = rawToSlider(deviceState.currentChannel.volume)
-                        let newSlider = max(0, min(maxAllowedSlider, base + delta))
+                        let newSlider = max(0, min(maxAllowedSlider, knobDragStart + delta))
                         sliderValue = newSlider
                         scheduleVolumeCommand(value: sliderToRaw(newSlider), delay: 0)
                     }
