@@ -143,6 +143,7 @@ class DeviceState: ObservableObject {
     @Published var selectedOutput: OutputChannel = .monA
     @Published var nightMode: Bool = false
     @Published var nightModeMax: Int = 40  // raw 40 = -40 dB max
+    @Published var miniMode: Bool = false
 
     var currentChannel: ChannelState {
         get { channels[selectedOutput] ?? ChannelState() }

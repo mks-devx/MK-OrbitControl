@@ -70,6 +70,135 @@ struct MenuBarView: View {
     private var volumePercent: Double { sliderValue / maxSlider }
 
     var body: some View {
+        if deviceState.miniMode {
+            miniBody
+        } else {
+            fullBody
+        }
+    }
+
+    // MARK: - Mini Mode
+
+    private var miniBody: some View {
+        VStack(spacing: 6) {
+            // Channel + dB
+            HStack {
+                Text(deviceState.selectedOutput.label)
+                    .font(f.dbFont(size: 13))
+                    .foregroundColor(t.textPrimary)
+                Spacer()
+                Text("\(rawToDbString(sliderToRaw(sliderValue))) dB")
+                    .font(f.dbFont(size: 18))
+                    .foregroundColor(t.textPrimary)
+                Spacer()
+                // Mute button
+                Button {
+                    commander.setMute(channel: deviceState.selectedOutput, muted: !deviceState.currentChannel.mute)
+                } label: {
+                    Image(systemName: deviceState.currentChannel.mute ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(deviceState.currentChannel.mute ? .red : t.textDim)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 14)
+
+            // Slider
+            GeometryReader { geo in
+                let trackH: CGFloat = 3
+                let thumbW: CGFloat = 14
+                let thumbH: CGFloat = 9
+                let usable = geo.size.width - thumbW
+                let thumbX = usable * (sliderValue / maxSlider) + thumbW / 2
+
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(Color.white.opacity(0.06))
+                        .frame(height: trackH)
+                        .padding(.horizontal, thumbW / 2)
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(t.accent)
+                        .frame(width: max(0, thumbX - thumbW / 2), height: trackH)
+                        .padding(.leading, thumbW / 2)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.white.opacity(0.9))
+                        .frame(width: thumbW, height: thumbH)
+                        .shadow(color: t.accent.opacity(0.4), radius: 3)
+                        .offset(x: thumbX - thumbW / 2)
+                }
+                .frame(height: geo.size.height)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            if !isUserDragging { isUserDragging = true }
+                            let pct = max(0, min(1, (value.location.x - thumbW / 2) / usable))
+                            sliderValue = min(pct * maxSlider, maxAllowedSlider)
+                            scheduleVolumeCommand(value: sliderToRaw(sliderValue), delay: 0)
+                        }
+                        .onEnded { _ in
+                            isUserDragging = false
+                            scheduleVolumeCommand(value: sliderToRaw(sliderValue), delay: 0)
+                        }
+                )
+            }
+            .frame(height: 14)
+            .padding(.horizontal, 14)
+
+            // Output dots + expand button
+            HStack(spacing: 10) {
+                ForEach(OutputChannel.displayOrder) { ch in
+                    Button {
+                        deviceState.selectedOutput = ch
+                    } label: {
+                        Circle()
+                            .fill(deviceState.selectedOutput == ch ? t.accent : Color.white.opacity(0.15))
+                            .frame(width: 6, height: 6)
+                    }
+                    .buttonStyle(.plain)
+                }
+                Spacer()
+                Button {
+                    deviceState.miniMode = false
+                } label: {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 9))
+                        .foregroundColor(t.textDim)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 14)
+        }
+        .padding(.vertical, 10)
+        .frame(width: 220, height: 90)
+        .background {
+            if t.useMaterial {
+                Rectangle().fill(.ultraThinMaterial).opacity(0.85)
+            }
+        }
+        .background(t.background.opacity(t.backgroundOpacity))
+        .preferredColorScheme(.dark)
+        .onReceive(deviceState.$channels) { _ in
+            let deviceVol = deviceState.currentChannel.volume
+            if isUserDragging { return }
+            if let pending = pendingSentValue {
+                if abs(deviceVol - pending) <= 2 { pendingSentValue = nil }
+                return
+            }
+            let currentRaw = sliderToRaw(sliderValue)
+            if abs(deviceVol - currentRaw) > 1 {
+                sliderValue = rawToSlider(deviceVol)
+            }
+        }
+        .onReceive(deviceState.$selectedOutput) { _ in
+            pendingSentValue = nil
+            sliderValue = rawToSlider(deviceState.currentChannel.volume)
+        }
+    }
+
+    // MARK: - Full Mode
+
+    private var fullBody: some View {
         VStack(spacing: 0) {
             // Header
             VStack(spacing: 3) {
@@ -301,6 +430,16 @@ struct MenuBarView: View {
                 .buttonStyle(.plain)
 
                 Spacer()
+
+                Button {
+                    deviceState.miniMode = true
+                } label: {
+                    Image(systemName: "arrow.down.right.and.arrow.up.left")
+                        .font(f.font(size: 10))
+                        .foregroundColor(t.textDim)
+                }
+                .buttonStyle(.plain)
+                .help("Mini mode")
 
                 Button {
                     onOpenSettings?()

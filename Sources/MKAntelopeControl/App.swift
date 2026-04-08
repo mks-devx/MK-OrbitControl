@@ -32,6 +32,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         commander.startDaemon()
         UpdateChecker.shared.checkOnLaunch()
 
+        // Watch for mini mode changes to resize popover
+        miniModeObserver = deviceState.$miniMode.sink { [weak self] mini in
+            DispatchQueue.main.async {
+                self?.popover?.contentSize = mini
+                    ? NSSize(width: 220, height: 90)
+                    : NSSize(width: 280, height: 434)
+            }
+        }
+
         // Set up HotkeyManager
         let hm = HotkeyManager(commander: commander, deviceState: deviceState)
         hotkeyManager = hm
@@ -42,6 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Status Item
 
     private var iconObserver: Any?
+    private var miniModeObserver: Any?
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
