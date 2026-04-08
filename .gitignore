@@ -5,3 +5,4 @@ __pycache__/
 .DS_Store
 dist-bundled/*.dmg
 dist-bundled/*.zip
+*.pyc
