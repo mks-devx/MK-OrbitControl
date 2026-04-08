@@ -1,0 +1,151 @@
+╔══════════════════════════════════════════════════╗
+║          MK-OrbitControl v1.0 — User Manual       ║
+╚══════════════════════════════════════════════════╝
+
+WHAT IS IT?
+═══════════
+MK-OrbitControl is a macOS menu bar app for controlling
+Antelope Synergy Core audio interfaces. It provides quick
+access to monitor volume, mute, dim, mono, and output
+selection directly from your menu bar.
+
+REQUIREMENTS
+════════════
+• macOS 13 (Ventura) or later
+• Antelope Synergy Core device (Orion Studio III,
+  Discrete 4/8, Galaxy, etc.)
+• Antelope Launcher installed and running
+• The Antelope Control Panel must have been opened
+  at least once (to create the device profile)
+
+INSTALLATION
+════════════
+1. Open MK-OrbitControl-v1.0.dmg
+2. Drag MK-OrbitControl.app to Applications
+3. Open Terminal and run:
+   bash /Volumes/MK-OrbitControl/setup.sh
+4. Open MK-OrbitControl from Applications
+
+macOS Security Note:
+  If macOS shows "app is from an unidentified developer":
+  • Method 1: Right-click the app → Open → click Open
+  • Method 2: System Settings → Privacy & Security → Open Anyway
+  • Method 3: Run in Terminal:
+    xattr -cr /Applications/MK-OrbitControl.app
+
+  This only needs to be done once.
+
+FEATURES
+════════
+
+Volume Control
+──────────────
+• Rotary knob — drag up/right to increase, down/left to decrease
+• Slider — drag the capsule thumb for precise control
+• Volume range: -∞ (silence) to 0 dB (max)
+• dB readout in the center of the knob
+
+Output Selection
+────────────────
+• MON A, MON B, HP 1, HP 2 — click dots to switch
+• A/B button — quick toggle between MON A and MON B
+
+Control Buttons
+───────────────
+• DIM — reduce volume by a fixed amount (yellow when active)
+• MUTE — mute the selected output (red when active)
+• MONO — switch to mono (blue when active)
+
+Night Mode
+──────────
+• Click the moon button to enable
+• Caps maximum volume at a configurable level (-20 to -60 dB)
+• Set the cap in Settings → General → Night Mode Volume Cap
+• The moon icon appears in the header when active
+
+Presets (A, B, C, D)
+─────────────────────
+• Right-click a preset slot → "Save current state"
+• Click a preset to recall it instantly
+• Right-click → "Clear" to remove a preset
+• Presets save the volume and mute state of the selected output
+
+Peak Meters
+───────────
+• L/R horizontal bars below the slider
+• Green → yellow → red gradient
+• Fast attack, slow decay for smooth display
+
+Global Hotkeys
+──────────────
+• Open Settings → Hotkeys
+• Click "Click to record" next to any action
+• Press your desired key combo (e.g., Ctrl+Shift+Up)
+• Requires at least one modifier key (Ctrl/Cmd/Option/Shift)
+• Works from any app — no need to open the popover
+• Volume HUD overlay appears when hotkeys are pressed
+
+Available hotkey actions (per output):
+  Volume Up, Volume Down, Mute Toggle
+
+THEMES & CUSTOMIZATION
+══════════════════════
+Open Settings (gear icon in footer):
+
+Themes (12):
+  Crimson, Midnight, Amber, Cyber (hacker green),
+  Cobalt, Purple Haze, Diablo (blood red),
+  Nova (gold), Aether (ice silver), Flux (teal),
+  Nexus (pink), Light
+
+Fonts (8):
+  System, SF Mono, Hack, Fira Code, JetBrains Mono,
+  Dot Matrix, Menlo, Monaco
+
+Menu Bar Icons (9):
+  Atom, Pulsar, Speaker, Waveform, Dial,
+  Headphones, Antenna, Bolt, Music
+
+SETTINGS
+════════
+• Appearance — Theme, Font, Menu Bar Icon
+• General — Launch at Login, Night Mode Volume Cap
+• Hotkeys — 12 configurable global shortcuts
+• About — Version, credits, support link
+
+TROUBLESHOOTING
+═══════════════
+
+"Offline" status:
+  → Make sure Antelope Launcher is running
+  → Restart the Antelope server:
+    sudo killall AntelopeAudioServer
+    Then reopen Antelope Launcher
+
+Slider snaps back:
+  → Wait 1-2 seconds — the device needs time to confirm
+  → This is normal when the server is under load
+
+Volume doesn't change:
+  → The app daemon may need to reconnect
+  → Restart the app
+
+Hotkeys don't work:
+  → Make sure your key combo includes a modifier
+    (Ctrl/Cmd/Option/Shift)
+  → Try recording the hotkey again in Settings
+
+MULTI-DEVICE SUPPORT
+════════════════════
+MK-OrbitControl auto-detects your Antelope device. If you have
+multiple Synergy Core interfaces, it uses the first one found.
+The channel mapping (MON A/B, HP1/HP2) may differ between devices.
+
+SUPPORT
+═══════
+This software is free and open source.
+If you find it useful, consider supporting development:
+
+☕ Buy me a coffee: https://buymeacoffee.com/mk_tools
+
+Not affiliated with Antelope Audio.
