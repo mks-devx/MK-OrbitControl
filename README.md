@@ -15,6 +15,17 @@ Control volume, mute, dim, mono, and output selection directly from your macOS m
 
 ---
 
+## 🎉 v1.2 Update — Fixed macOS 15 Compatibility
+
+**Fixed:** Users on macOS 15.7+ no longer get "application is not supported" error.
+- ✅ App is now properly code signed
+- ✅ Icon displays correctly
+- ✅ Works on macOS 13, 14, 15
+
+See **[INSTALL.md](INSTALL.md)** for detailed installation & troubleshooting.
+
+---
+
 ## Features
 
 **Control**
@@ -62,30 +73,25 @@ Have a Synergy Core device? [Test and report your results](../../issues) — com
 
 ## Install
 
-### Download (recommended)
-1. Grab the latest DMG from [**Releases**](../../releases/latest)
-2. Drag **MK-OrbitControl.app** to Applications
-3. Open Terminal: `bash /Volumes/MK-OrbitControl/setup.sh`
-4. If macOS blocks it: **Right-click → Open → Open**
+**→ See [INSTALL.md](INSTALL.md) for complete installation guide with troubleshooting**
 
-### Build from source
+### Quick Start (3 minutes)
+1. Download [latest DMG](../../releases/latest)
+2. Drag **MK-OrbitControl.app** to Applications
+3. Run: `bash /Volumes/MK-OrbitControl/setup.sh`
+4. Launch from Applications
+
+### Requirements
+- **macOS 13 or later** (13, 14, 15)
+- **Antelope Launcher** (free from antelopeaudio.com)
+- **Synergy Core device** (Orion Studio III, Discrete 4, etc.)
+
+### Build from Source
 ```bash
 git clone https://github.com/mks-devx/MK-OrbitControl.git
 cd MK-OrbitControl
-swift build
-
-# Python 3.8 bridge setup (one time):
-brew install pyenv && pyenv install 3.8.20
-~/.pyenv/versions/3.8.20/bin/python3.8 -m pip install zeroconf netifaces
-bash dist-bundled/setup.sh
-
-.build/debug/MKOrbitControl
+bash build-dist.sh  # Creates ~/Desktop/MK-OrbitControl-vX.Y.Z.dmg
 ```
-
-### Requirements
-- macOS 13+
-- Antelope Launcher running
-- Antelope Synergy Core device
 
 ---
 

@@ -3,6 +3,5 @@
 antelope_modules/
 __pycache__/
 .DS_Store
-dist-bundled/*.dmg
-dist-bundled/*.zip
+dist-bundled/
 *.pyc
