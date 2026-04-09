@@ -216,6 +216,15 @@ struct MenuBarView: View {
                     Text(deviceState.connected ? "Connected" : "Offline")
                         .font(f.font(size: 9))
                         .foregroundColor(t.textDim)
+                    Button {
+                        deviceState.reconnect()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 9))
+                            .foregroundColor(deviceState.connected ? t.textDim : t.accent)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Reconnect to device")
                     Spacer()
                     Text("MK-OrbitControl")
                         .font(f.font(size: 9))

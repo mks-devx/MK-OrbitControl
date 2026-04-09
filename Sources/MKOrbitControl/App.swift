@@ -29,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let reader = AntelopeStateReader(deviceState: deviceState)
         stateReader = reader
+        deviceState.stateReader = reader
         reader.start()
         commander.startDaemon()
         midiManager = MIDIManager(commander: commander, deviceState: deviceState)

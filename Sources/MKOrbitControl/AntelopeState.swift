@@ -26,9 +26,19 @@ final class AntelopeStateReader {
     private let deviceState: DeviceState
     private var thread: Thread?
     private var currentFd: Int32 = -1
+    private var _forceReconnect = false
 
     init(deviceState: DeviceState) {
         self.deviceState = deviceState
+    }
+
+    /// Force drop current connection and reconnect immediately
+    func reconnect() {
+        _forceReconnect = true
+        // Close the current socket to break out of the read loop instantly
+        if currentFd >= 0 {
+            shutdown(currentFd, SHUT_RDWR)
+        }
     }
 
     deinit {
@@ -72,12 +82,12 @@ final class AntelopeStateReader {
 
             var consecutiveFailures = 0
 
-            while !Thread.current.isCancelled {
+            while !Thread.current.isCancelled && !_forceReconnect {
                 guard let payload = readOneMessage(fd: fd) else {
                     consecutiveFailures += 1
                     // Only give up after many failures (timeout = 15s each, so 10 = 2.5 min)
                     // This keeps the connection alive through idle periods
-                    if consecutiveFailures >= 10 { break }
+                    if consecutiveFailures >= 10 || _forceReconnect { break }
                     // Check if socket is still alive by peeking
                     var buf = [UInt8](repeating: 0, count: 1)
                     let peek = recv(fd, &buf, 1, MSG_PEEK | MSG_DONTWAIT)
@@ -88,6 +98,7 @@ final class AntelopeStateReader {
                 consecutiveFailures = 0
                 parseAndApply(payload: payload)
             }
+            _forceReconnect = false
 
             close(fd)
             currentFd = -1

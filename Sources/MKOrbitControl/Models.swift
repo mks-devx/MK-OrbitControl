@@ -146,6 +146,15 @@ class DeviceState: ObservableObject {
     @Published var nightModeMax: Int = 40  // raw 40 = -40 dB max
     @Published var miniMode: Bool = false
 
+    /// Reference to state reader for manual reconnect
+    weak var stateReader: AntelopeStateReader?
+
+    func reconnect() {
+        stateReader?.reconnect()
+        // Reset connection state immediately for UI feedback
+        lastDataReceived = .distantPast
+    }
+
     var currentChannel: ChannelState {
         get { channels[selectedOutput] ?? ChannelState() }
     }
