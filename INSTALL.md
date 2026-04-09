@@ -81,11 +81,19 @@ This is normal if you've run it before. Just launch the app from Applications.
 
 1. Make sure Antelope Launcher is running (look in System Settings → General → Login Items)
 2. Check that your Synergy Core device is powered on and connected via Thunderbolt
-3. Restart the AntelopeAudioServer:
+3. Click the **reconnect button** (circular arrow icon next to the connection status) to force an immediate re-scan
+4. If still offline, restart the AntelopeAudioServer:
    ```bash
    sudo killall AntelopeAudioServer
    ```
-   Then wait 5 seconds and reconnect.
+   Wait 5 seconds, then click the reconnect button again.
+
+### ❌ Device disconnects when unplugging Thunderbolt cable
+
+This is expected. When you reconnect the cable:
+1. Wait a few seconds for the device to power up
+2. Click the **reconnect button** (circular arrow) in the app header
+3. The app will immediately re-scan and reconnect — no need to restart
 
 ### ❌ Can't find /Volumes/MK-OrbitControl in Terminal
 
