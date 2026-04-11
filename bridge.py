@@ -231,6 +231,7 @@ def run_daemon():
     setup_environment()
     fix_circular_imports()
     device = connect()
+    consecutive_failures = 0
 
     valid = {"set_volume", "set_mute", "set_dim", "set_mono"}
 
@@ -275,7 +276,29 @@ def run_daemon():
 
             if cmd in valid:
                 result = device.request(cmd, ch, val, timeout=5)
-                resp = '{"ok":true}\n' if result else '{"ok":false}\n'
+                if result:
+                    consecutive_failures = 0
+                    resp = '{"ok":true}\n'
+                else:
+                    consecutive_failures += 1
+                    if consecutive_failures >= 3:
+                        # Connection likely dropped — reconnect
+                        sys.stderr.write("3 consecutive failures, reconnecting...\n")
+                        sys.stderr.flush()
+                        try:
+                            device.stop()
+                        except Exception:
+                            pass
+                        try:
+                            device = connect()
+                            consecutive_failures = 0
+                            # Retry the command after reconnect
+                            result = device.request(cmd, ch, val, timeout=5)
+                            resp = '{"ok":true}\n' if result else '{"ok":false}\n'
+                        except Exception as re_err:
+                            resp = '{"ok":false,"error":' + json.dumps("reconnect failed: " + str(re_err)) + '}\n'
+                    else:
+                        resp = '{"ok":false}\n'
             else:
                 resp = '{"ok":false,"error":"unknown"}\n'
 
