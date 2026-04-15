@@ -4,7 +4,7 @@ import AppKit
 class UpdateChecker {
     static let shared = UpdateChecker()
 
-    private let currentVersion = "1.2"
+    private let currentVersion = "1.4"
     private let repoOwner = "mks-devx"
     private let repoName = "MK-OrbitControl"
     private let checkInterval: TimeInterval = 86400

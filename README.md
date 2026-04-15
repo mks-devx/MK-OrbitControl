@@ -118,7 +118,7 @@ The setup script extracts necessary modules from your local Antelope installatio
 Open **Terminal** (Applications → Utilities → Terminal) and run:
 
 ```bash
-bash "/Volumes/MK-OrbitControl v1.3/setup.sh"
+bash "/Volumes/MK-OrbitControl v1.4/setup.sh"
 ```
 
 You should see `Extracted X modules` followed by `Done!`.

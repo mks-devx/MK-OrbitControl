@@ -5,8 +5,8 @@
     <key>CFBundleName</key><string>MK-OrbitControl</string>
     <key>CFBundleDisplayName</key><string>MK-OrbitControl</string>
     <key>CFBundleIdentifier</key><string>com.mkdevices.orbitcontrol</string>
-    <key>CFBundleVersion</key><string>1.2</string>
-    <key>CFBundleShortVersionString</key><string>1.2</string>
+    <key>CFBundleVersion</key><string>1.4</string>
+    <key>CFBundleShortVersionString</key><string>1.4</string>
     <key>CFBundleExecutable</key><string>MK-OrbitControl</string>
     <key>CFBundleIconFile</key><string>AppIcon.icns</string>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
