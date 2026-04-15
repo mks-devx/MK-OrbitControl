@@ -155,6 +155,30 @@ class DeviceState: ObservableObject {
         lastDataReceived = .distantPast
     }
 
+    @Published var isRestartingServer: Bool = false
+
+    /// Restart connection by launching Antelope Launcher (re-initializes the server)
+    func restartServer() {
+        guard !isRestartingServer else { return }
+        isRestartingServer = true
+
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.antelopeaudio.launcher") {
+            try? NSWorkspace.shared.openApplication(at: url, configuration: .init())
+        } else {
+            // Fallback: open by path
+            NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications/Antelope Launcher.app"))
+        }
+
+        // Give the launcher time to re-initialize the server, then reconnect
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            Thread.sleep(forTimeInterval: 5)
+            DispatchQueue.main.async {
+                self?.isRestartingServer = false
+                self?.reconnect()
+            }
+        }
+    }
+
     var currentChannel: ChannelState {
         get { channels[selectedOutput] ?? ChannelState() }
     }

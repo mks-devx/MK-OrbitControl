@@ -240,6 +240,33 @@ struct SettingsView: View {
                         .frame(width: 120)
                     }
                 }
+
+                settingsGroup {
+                    settingsRow {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Restart Antelope Server")
+                                .font(.system(size: 13))
+                            Text("Opens Antelope Launcher to re-initialize the server connection.")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Button {
+                            deviceState.restartServer()
+                        } label: {
+                            if deviceState.isRestartingServer {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .frame(width: 60)
+                            } else {
+                                Text("Restart")
+                                    .frame(width: 60)
+                            }
+                        }
+                        .controlSize(.small)
+                        .disabled(deviceState.isRestartingServer)
+                    }
+                }
             }
             .padding(24)
         }
@@ -426,7 +453,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("MK-OrbitControl")
                                 .font(.system(size: 18, weight: .bold))
-                            Text("Version 1.2")
+                            Text("Version 1.4")
                                 .font(.system(size: 13))
                                 .foregroundColor(.secondary)
                         }

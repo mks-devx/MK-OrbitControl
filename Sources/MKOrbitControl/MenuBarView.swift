@@ -225,6 +225,23 @@ struct MenuBarView: View {
                     }
                     .buttonStyle(.plain)
                     .help("Reconnect to device")
+                    if !deviceState.connected {
+                        Button {
+                            deviceState.restartServer()
+                        } label: {
+                            if deviceState.isRestartingServer {
+                                ProgressView()
+                                    .controlSize(.mini)
+                            } else {
+                                Image(systemName: "bolt.trianglebadge.exclamationmark.fill")
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.orange)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(deviceState.isRestartingServer)
+                        .help("Restart Antelope Server (admin)")
+                    }
                     Spacer()
                     Text("MK-OrbitControl")
                         .font(f.font(size: 9))

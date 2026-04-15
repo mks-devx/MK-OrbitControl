@@ -72,6 +72,7 @@ Control volume, mute, dim, mono, and output selection directly from your macOS m
 ### Reliability
 - **Auto-reconnect** — if the connection to the Antelope server drops after extended uptime, the bridge automatically recovers without manual restart
 - **Reconnect button** — force an immediate device re-scan after cable disconnect
+- **Restart Server** — one-click server restart when offline (relaunches Antelope Launcher, auto-reconnects)
 
 ---
 
@@ -197,11 +198,7 @@ The app can't find your Antelope device. Check in order:
 
 3. **Click the reconnect button** — the circular arrow icon in the app header forces an immediate device re-scan.
 
-4. **Restart the Antelope server** (last resort):
-   ```bash
-   sudo killall AntelopeAudioServer
-   ```
-   Wait 5 seconds, then click the reconnect button in the app.
+4. **Restart the server** — when offline, an orange warning icon appears next to the reconnect button. Click it to relaunch Antelope Launcher and re-initialize the server automatically. Also available in Settings → General.
 
 ### Setup Script: "Antelope software not found"
 
@@ -341,6 +338,11 @@ Contributions welcome:
 ---
 
 ## Changelog
+
+### v1.4 — Server Restart
+- **Restart Server button** — when offline, an orange indicator appears in the header to relaunch the Antelope server with one click (no admin password needed)
+- **Restart in Settings** — also available under Settings → General → Restart Antelope Server
+- Opens Antelope Launcher to re-initialize the server, then auto-reconnects
 
 ### v1.3 — Auto-reconnect
 - Bridge daemon now auto-reconnects after connection drops during extended uptime
