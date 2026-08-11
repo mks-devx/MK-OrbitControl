@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 // MARK: - App Font
 
@@ -18,6 +19,15 @@ enum AppFont: String, CaseIterable, Identifiable {
         switch self {
         case .dotMatrix: return "Dot Matrix"
         default: return rawValue
+        }
+    }
+
+    var isAvailable: Bool {
+        switch self {
+        case .system, .mono, .menlo, .monaco:
+            return true
+        default:
+            return NSFont(name: familyName, size: 12) != nil
         }
     }
 
@@ -117,6 +127,24 @@ struct AppTheme: Identifiable {
     let isDark: Bool
 }
 
+enum InterfaceSurfaceStyle: String, CaseIterable, Identifiable, Hashable {
+    case solid = "Solid"
+    case translucent = "Translucent"
+    case liquidGlass = "Liquid Glass"
+
+    var id: String { rawValue }
+
+    var isAvailable: Bool {
+        switch self {
+        case .solid, .translucent:
+            return true
+        case .liquidGlass:
+            if #available(macOS 26.0, *) { return true }
+            return false
+        }
+    }
+}
+
 // MARK: - All Themes
 
 let allThemes: [AppTheme] = [
@@ -129,7 +157,7 @@ let allThemes: [AppTheme] = [
         knobOuter: Color.white.opacity(0.06),
         knobInner: [Color(red: 0.16, green: 0.16, blue: 0.18), Color(red: 0.09, green: 0.09, blue: 0.11)],
         knobRing: Color.white.opacity(0.08),
-        textPrimary: .white, textSecondary: .white.opacity(0.8), textDim: .white.opacity(0.35),
+        textPrimary: .white, textSecondary: .white.opacity(0.84), textDim: .white.opacity(0.62),
         meterGradient: [Color(red: 0.1, green: 0.7, blue: 0.3), Color(red: 0.8, green: 0.7, blue: 0.1), Color(red: 0.9, green: 0.15, blue: 0.1)],
         isDark: true
     ),
@@ -142,7 +170,7 @@ let allThemes: [AppTheme] = [
         knobOuter: Color.white.opacity(0.05),
         knobInner: [Color(red: 0.08, green: 0.08, blue: 0.10), Color(red: 0.03, green: 0.03, blue: 0.05)],
         knobRing: Color.white.opacity(0.06),
-        textPrimary: .white, textSecondary: .white.opacity(0.7), textDim: .white.opacity(0.25),
+        textPrimary: .white, textSecondary: .white.opacity(0.82), textDim: .white.opacity(0.60),
         meterGradient: [.white.opacity(0.3), .white.opacity(0.5), .white],
         isDark: true
     ),
@@ -155,7 +183,7 @@ let allThemes: [AppTheme] = [
         knobOuter: Color.white.opacity(0.07),
         knobInner: [Color(red: 0.15, green: 0.14, blue: 0.13), Color(red: 0.08, green: 0.08, blue: 0.07)],
         knobRing: Color(red: 0.9, green: 0.6, blue: 0.1).opacity(0.15),
-        textPrimary: .white, textSecondary: Color(red: 0.9, green: 0.8, blue: 0.6), textDim: .white.opacity(0.3),
+        textPrimary: .white, textSecondary: Color(red: 0.95, green: 0.86, blue: 0.70), textDim: .white.opacity(0.62),
         meterGradient: [Color(red: 0.1, green: 0.7, blue: 0.3), Color(red: 0.9, green: 0.6, blue: 0.1), Color(red: 0.9, green: 0.15, blue: 0.1)],
         isDark: true
     ),
@@ -168,7 +196,7 @@ let allThemes: [AppTheme] = [
         knobOuter: Color(red: 0.0, green: 0.95, blue: 0.3).opacity(0.1),
         knobInner: [Color(red: 0.04, green: 0.06, blue: 0.04), Color(red: 0.01, green: 0.02, blue: 0.01)],
         knobRing: Color(red: 0.0, green: 0.95, blue: 0.3).opacity(0.12),
-        textPrimary: Color(red: 0.0, green: 0.95, blue: 0.3), textSecondary: Color(red: 0.0, green: 0.7, blue: 0.2), textDim: Color(red: 0.0, green: 0.4, blue: 0.1),
+        textPrimary: Color(red: 0.50, green: 1.0, blue: 0.66), textSecondary: Color(red: 0.38, green: 0.90, blue: 0.53), textDim: Color(red: 0.46, green: 0.74, blue: 0.53),
         meterGradient: [Color(red: 0.0, green: 0.4, blue: 0.1), Color(red: 0.0, green: 0.8, blue: 0.2), Color(red: 0.0, green: 1.0, blue: 0.3)],
         isDark: true
     ),
@@ -181,7 +209,7 @@ let allThemes: [AppTheme] = [
         knobOuter: Color(red: 0.3, green: 0.5, blue: 1.0).opacity(0.08),
         knobInner: [Color(red: 0.10, green: 0.11, blue: 0.18), Color(red: 0.05, green: 0.05, blue: 0.10)],
         knobRing: Color(red: 0.3, green: 0.5, blue: 1.0).opacity(0.1),
-        textPrimary: .white, textSecondary: Color(red: 0.6, green: 0.75, blue: 1.0), textDim: .white.opacity(0.3),
+        textPrimary: .white, textSecondary: Color(red: 0.72, green: 0.82, blue: 1.0), textDim: .white.opacity(0.62),
         meterGradient: [Color(red: 0.2, green: 0.4, blue: 0.8), Color(red: 0.4, green: 0.6, blue: 1.0), Color(red: 0.9, green: 0.2, blue: 0.2)],
         isDark: true
     ),
@@ -194,7 +222,7 @@ let allThemes: [AppTheme] = [
         knobOuter: Color(red: 0.7, green: 0.3, blue: 1.0).opacity(0.08),
         knobInner: [Color(red: 0.12, green: 0.08, blue: 0.16), Color(red: 0.05, green: 0.03, blue: 0.08)],
         knobRing: Color(red: 0.7, green: 0.3, blue: 1.0).opacity(0.12),
-        textPrimary: .white, textSecondary: Color(red: 0.85, green: 0.7, blue: 1.0), textDim: .white.opacity(0.3),
+        textPrimary: .white, textSecondary: Color(red: 0.90, green: 0.80, blue: 1.0), textDim: .white.opacity(0.62),
         meterGradient: [Color(red: 0.4, green: 0.2, blue: 0.7), Color(red: 0.7, green: 0.3, blue: 1.0), Color(red: 1.0, green: 0.2, blue: 0.4)],
         isDark: true
     ),
@@ -207,7 +235,7 @@ let allThemes: [AppTheme] = [
         knobOuter: Color(red: 0.9, green: 0.05, blue: 0.05).opacity(0.12),
         knobInner: [Color(red: 0.10, green: 0.02, blue: 0.02), Color(red: 0.03, green: 0.0, blue: 0.0)],
         knobRing: Color(red: 0.9, green: 0.05, blue: 0.05).opacity(0.15),
-        textPrimary: Color(red: 1.0, green: 0.1, blue: 0.1), textSecondary: Color(red: 0.8, green: 0.08, blue: 0.08), textDim: Color(red: 0.4, green: 0.03, blue: 0.03),
+        textPrimary: Color(red: 1.0, green: 0.62, blue: 0.62), textSecondary: Color(red: 0.95, green: 0.48, blue: 0.48), textDim: Color(red: 0.78, green: 0.46, blue: 0.46),
         meterGradient: [Color(red: 0.3, green: 0.0, blue: 0.0), Color(red: 0.7, green: 0.0, blue: 0.0), Color(red: 1.0, green: 0.1, blue: 0.05)],
         isDark: true
     ),
@@ -220,7 +248,7 @@ let allThemes: [AppTheme] = [
         knobOuter: Color(red: 1.0, green: 0.85, blue: 0.4).opacity(0.08),
         knobInner: [Color(red: 0.12, green: 0.10, blue: 0.08), Color(red: 0.05, green: 0.04, blue: 0.03)],
         knobRing: Color(red: 1.0, green: 0.85, blue: 0.4).opacity(0.1),
-        textPrimary: Color(red: 1.0, green: 0.95, blue: 0.8), textSecondary: Color(red: 0.9, green: 0.8, blue: 0.5), textDim: Color(red: 0.5, green: 0.4, blue: 0.2),
+        textPrimary: Color(red: 1.0, green: 0.95, blue: 0.8), textSecondary: Color(red: 0.96, green: 0.87, blue: 0.62), textDim: Color(red: 0.72, green: 0.65, blue: 0.50),
         meterGradient: [Color(red: 0.4, green: 0.3, blue: 0.1), Color(red: 0.8, green: 0.7, blue: 0.2), Color(red: 1.0, green: 0.4, blue: 0.1)],
         isDark: true
     ),
@@ -233,7 +261,7 @@ let allThemes: [AppTheme] = [
         knobOuter: Color(red: 0.7, green: 0.8, blue: 0.9).opacity(0.06),
         knobInner: [Color(red: 0.10, green: 0.11, blue: 0.14), Color(red: 0.04, green: 0.05, blue: 0.07)],
         knobRing: Color(red: 0.7, green: 0.8, blue: 0.9).opacity(0.08),
-        textPrimary: Color(red: 0.85, green: 0.9, blue: 0.95), textSecondary: Color(red: 0.6, green: 0.7, blue: 0.8), textDim: Color(red: 0.3, green: 0.35, blue: 0.4),
+        textPrimary: Color(red: 0.90, green: 0.94, blue: 0.98), textSecondary: Color(red: 0.70, green: 0.79, blue: 0.88), textDim: Color(red: 0.55, green: 0.62, blue: 0.70),
         meterGradient: [Color(red: 0.3, green: 0.5, blue: 0.6), Color(red: 0.5, green: 0.7, blue: 0.8), Color(red: 0.9, green: 0.3, blue: 0.3)],
         isDark: true
     ),
@@ -246,7 +274,7 @@ let allThemes: [AppTheme] = [
         knobOuter: Color(red: 0.0, green: 0.85, blue: 0.8).opacity(0.08),
         knobInner: [Color(red: 0.06, green: 0.10, blue: 0.11), Color(red: 0.02, green: 0.04, blue: 0.05)],
         knobRing: Color(red: 0.0, green: 0.85, blue: 0.8).opacity(0.1),
-        textPrimary: Color(red: 0.8, green: 1.0, blue: 0.98), textSecondary: Color(red: 0.4, green: 0.8, blue: 0.75), textDim: Color(red: 0.2, green: 0.4, blue: 0.38),
+        textPrimary: Color(red: 0.84, green: 1.0, blue: 0.98), textSecondary: Color(red: 0.58, green: 0.88, blue: 0.84), textDim: Color(red: 0.50, green: 0.70, blue: 0.68),
         meterGradient: [Color(red: 0.0, green: 0.4, blue: 0.4), Color(red: 0.0, green: 0.7, blue: 0.65), Color(red: 0.9, green: 0.2, blue: 0.2)],
         isDark: true
     ),
@@ -259,7 +287,7 @@ let allThemes: [AppTheme] = [
         knobOuter: Color(red: 1.0, green: 0.2, blue: 0.6).opacity(0.1),
         knobInner: [Color(red: 0.12, green: 0.06, blue: 0.10), Color(red: 0.04, green: 0.02, blue: 0.04)],
         knobRing: Color(red: 1.0, green: 0.2, blue: 0.6).opacity(0.12),
-        textPrimary: Color(red: 1.0, green: 0.8, blue: 0.9), textSecondary: Color(red: 0.9, green: 0.4, blue: 0.65), textDim: Color(red: 0.5, green: 0.2, blue: 0.35),
+        textPrimary: Color(red: 1.0, green: 0.84, blue: 0.92), textSecondary: Color(red: 0.96, green: 0.62, blue: 0.78), textDim: Color(red: 0.74, green: 0.52, blue: 0.64),
         meterGradient: [Color(red: 0.5, green: 0.1, blue: 0.3), Color(red: 0.9, green: 0.2, blue: 0.5), Color(red: 1.0, green: 0.3, blue: 0.3)],
         isDark: true
     ),
@@ -272,7 +300,7 @@ let allThemes: [AppTheme] = [
         knobOuter: Color.black.opacity(0.08),
         knobInner: [Color(red: 0.92, green: 0.92, blue: 0.93), Color(red: 0.85, green: 0.85, blue: 0.86)],
         knobRing: Color.black.opacity(0.1),
-        textPrimary: .black, textSecondary: Color.black.opacity(0.7), textDim: Color.black.opacity(0.3),
+        textPrimary: Color(red: 0.04, green: 0.04, blue: 0.06), textSecondary: Color.black.opacity(0.78), textDim: Color.black.opacity(0.62),
         meterGradient: [Color(red: 0.1, green: 0.7, blue: 0.3), Color(red: 0.8, green: 0.7, blue: 0.1), Color(red: 0.9, green: 0.15, blue: 0.1)],
         isDark: false
     ),
@@ -284,34 +312,66 @@ class ThemeManager: ObservableObject {
     @Published var currentTheme: AppTheme
     @Published var currentFont: AppFont
     @Published var currentIcon: MenuBarIcon
+    @Published var surfaceStyle: InterfaceSurfaceStyle
+    @Published var backgroundTransparency: Double
 
     private static let themeKey = "MKSelectedTheme"
     private static let fontKey = "MKSelectedFont"
     private static let iconKey = "MKSelectedIcon"
+    private static let surfaceStyleKey = "MKInterfaceSurfaceStyle"
+    private static let backgroundTransparencyKey = "MKBackgroundTransparency"
+    private let defaults: UserDefaults
 
-    init() {
-        let savedThemeId = UserDefaults.standard.string(forKey: Self.themeKey) ?? "crimson"
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+
+        let savedThemeId = defaults.string(forKey: Self.themeKey) ?? "crimson"
         currentTheme = allThemes.first { $0.id == savedThemeId } ?? allThemes[0]
 
-        let savedFontId = UserDefaults.standard.string(forKey: Self.fontKey) ?? "system"
-        currentFont = AppFont(rawValue: savedFontId) ?? .system
+        let savedFontId = defaults.string(forKey: Self.fontKey) ?? "system"
+        let savedFont = AppFont(rawValue: savedFontId) ?? .system
+        currentFont = savedFont.isAvailable ? savedFont : .system
 
-        let savedIconId = UserDefaults.standard.string(forKey: Self.iconKey) ?? "atom"
+        let savedIconId = defaults.string(forKey: Self.iconKey) ?? "atom"
         currentIcon = MenuBarIcon(rawValue: savedIconId) ?? .atom
+
+        let defaultStyle: InterfaceSurfaceStyle
+        if #available(macOS 26.0, *) {
+            defaultStyle = .liquidGlass
+        } else {
+            defaultStyle = .translucent
+        }
+        let savedStyle = defaults.string(forKey: Self.surfaceStyleKey)
+            .flatMap(InterfaceSurfaceStyle.init(rawValue:)) ?? defaultStyle
+        surfaceStyle = savedStyle.isAvailable ? savedStyle : .translucent
+
+        let savedTransparency = defaults.object(forKey: Self.backgroundTransparencyKey) as? Double
+        backgroundTransparency = min(0.75, max(0, savedTransparency ?? 0.28))
     }
 
     func setTheme(_ theme: AppTheme) {
         currentTheme = theme
-        UserDefaults.standard.set(theme.id, forKey: Self.themeKey)
+        defaults.set(theme.id, forKey: Self.themeKey)
     }
 
     func setFont(_ font: AppFont) {
         currentFont = font
-        UserDefaults.standard.set(font.rawValue, forKey: Self.fontKey)
+        defaults.set(font.rawValue, forKey: Self.fontKey)
     }
 
     func setIcon(_ icon: MenuBarIcon) {
         currentIcon = icon
-        UserDefaults.standard.set(icon.rawValue, forKey: Self.iconKey)
+        defaults.set(icon.rawValue, forKey: Self.iconKey)
+    }
+
+    func setSurfaceStyle(_ style: InterfaceSurfaceStyle) {
+        guard style.isAvailable else { return }
+        surfaceStyle = style
+        defaults.set(style.rawValue, forKey: Self.surfaceStyleKey)
+    }
+
+    func setBackgroundTransparency(_ transparency: Double) {
+        backgroundTransparency = min(0.75, max(0, transparency))
+        defaults.set(backgroundTransparency, forKey: Self.backgroundTransparencyKey)
     }
 }

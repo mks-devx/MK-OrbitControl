@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-class FloatingWindowController {
+final class FloatingWindowController: NSObject, NSWindowDelegate {
     static let shared = FloatingWindowController()
 
     private var window: NSPanel?
@@ -31,7 +31,7 @@ class FloatingWindowController {
         let hosting = NSHostingView(rootView: view)
 
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 280, height: 434),
+            contentRect: NSRect(origin: .zero, size: OrbitControlLayout.fullSize),
             styleMask: [.titled, .closable, .nonactivatingPanel, .hudWindow],
             backing: .buffered,
             defer: false
@@ -45,6 +45,8 @@ class FloatingWindowController {
         panel.title = "MK-OrbitControl"
         panel.titlebarAppearsTransparent = true
         panel.titleVisibility = .hidden
+        panel.isReleasedWhenClosed = false
+        panel.delegate = self
         panel.contentView = hosting
         panel.center()
         panel.orderFrontRegardless()
@@ -59,4 +61,10 @@ class FloatingWindowController {
     }
 
     var visible: Bool { isVisible }
+
+    func windowWillClose(_ notification: Notification) {
+        guard notification.object as? NSWindow === window else { return }
+        isVisible = false
+        window = nil
+    }
 }

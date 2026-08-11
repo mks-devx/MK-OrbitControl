@@ -1,41 +1,56 @@
 #!/bin/bash
-# Build MK-OrbitControl distribution with bundled Python 3.8
-# Builds universal binary (arm64 + x86_64), code signs, creates DMG
-# Continue on errors for optional copies
+# Build the Apple Silicon MK-OrbitControl distribution with bundled Python 3.8.
+# Python 3.8 is required because Antelope's extracted bytecode targets that ABI.
 
-PROJECT="$HOME/Developer/MK-AntelopeControl"
-DIST="$PROJECT/dist-bundled"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT="$SCRIPT_DIR"
+DIST="${DIST_ROOT:-$PROJECT/dist-bundled}"
 APP="$DIST/MK-OrbitControl.app"
-PY38="$HOME/.pyenv/versions/3.8.20"
+PY38="${PY38_ROOT:-$HOME/.pyenv/versions/3.8.20}"
+GETTEXT_LIB="${GETTEXT_LIB:-/opt/homebrew/opt/gettext/lib/libintl.8.dylib}"
 
 # Get version from git tag (e.g., v1.2 → 1.2), fallback to 1.2
-VERSION=$(cd "$PROJECT" && git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "1.2")
-if [ -z "$VERSION" ] || [ "$VERSION" = "v" ]; then VERSION="1.2"; fi
-DMG_FILE="$HOME/Desktop/MK-OrbitControl-v${VERSION}.dmg"
+VERSION=$(cd "$PROJECT" && git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "1.4")
+if [ -z "$VERSION" ] || [ "$VERSION" = "v" ]; then VERSION="1.4"; fi
+DMG_FILE="${DMG_OUTPUT:-$HOME/Desktop/MK-OrbitControl-v${VERSION}.dmg}"
 
-# Signing identity (change if you have a certificate)
-SIGN_IDENTITY="-" # ad-hoc signing
+# Use SIGN_IDENTITY="Developer ID Application: ..." for distributable builds.
+# The default remains ad-hoc so local verification does not require credentials.
+SIGN_IDENTITY="${SIGN_IDENTITY:--}"
+NOTARY_PROFILE="${NOTARY_PROFILE:-}"
 
 echo "Building MK-OrbitControl v${VERSION}..."
 
-# Build Swift for both architectures
+# Validate the local release toolchain before deleting the previous output.
+if [ ! -x "$PY38/bin/python3.8" ] || [ ! -f "$PY38/lib/libpython3.8.dylib" ]; then
+  echo "ERROR: Python 3.8.20 runtime not found at $PY38"
+  echo "Set PY38_ROOT to a complete arm64 Python 3.8 installation."
+  exit 1
+fi
+if [ ! -f "$GETTEXT_LIB" ]; then
+  echo "ERROR: gettext runtime not found at $GETTEXT_LIB"
+  echo "Set GETTEXT_LIB to libintl.8.dylib."
+  exit 1
+fi
+case "$DIST" in
+  "$PROJECT"/dist-*|/tmp/*) ;;
+  *) echo "ERROR: Refusing unsafe distribution path: $DIST"; exit 1 ;;
+esac
+
+# Build Swift for Apple Silicon. The bundled Python runtime is arm64-only.
 cd "$PROJECT"
 echo "Building arm64..."
-swift build -c release 2>&1 | tail -1
-echo "Building x86_64..."
-swift build -c release -Xswiftc -target -Xswiftc x86_64-apple-macosx13 2>&1 | tail -1 || {
-  echo "x86_64 build optional (universal may fail), continuing..."
-}
+swift build -c release --arch arm64
 
 # Create fresh .app
 rm -rf "$DIST"
 mkdir -p "$APP/Contents/MacOS"
-mkdir -p "$APP/Contents/Resources/python/lib"
-mkdir -p "$APP/Contents/Resources/python/lib-dynload"
-mkdir -p "$APP/Contents/Resources/python/site-packages"
+PYTHON_ROOT="$APP/Contents/Resources/python"
+PYTHON_STDLIB="$PYTHON_ROOT/lib/python3.8"
+mkdir -p "$PYTHON_STDLIB/site-packages"
 
 # Copy binary (prefer arm64, fallback to existing)
-BINARY="$PROJECT/.build/release/MKAntelopeControl"
+BINARY="$(swift build -c release --arch arm64 --show-bin-path)/MKOrbitControl"
 if [ ! -f "$BINARY" ]; then
   echo "ERROR: Swift build failed. Binary not found at $BINARY"
   exit 1
@@ -44,6 +59,8 @@ cp "$BINARY" "$APP/Contents/MacOS/MK-OrbitControl"
 
 # Copy bridge + icon
 cp "$PROJECT/bridge.py" "$APP/Contents/Resources/"
+cp "$PROJECT/setup.sh" "$APP/Contents/Resources/"
+chmod +x "$APP/Contents/Resources/setup.sh"
 cp "$PROJECT/Sources/MKOrbitControl/AppIcon.icns" "$APP/Contents/Resources/"
 
 # Info.plist with dynamic version
@@ -66,117 +83,102 @@ cat > "$APP/Contents/Info.plist" << PLIST
 </plist>
 PLIST
 
-# Bundle Python 3.8 binary
-cp "$PY38/bin/python3.8" "$APP/Contents/Resources/python/"
-
-# Bundle minimal stdlib
-cd "$PY38/lib/python3.8"
-for f in $(find . -name "*.pyc" -path "*/__pycache__/*" | head -200); do
-    dir=$(dirname "$f")
-    # Convert __pycache__/foo.cpython-38.pyc to foo.pyc
-    base=$(basename "$f" | sed 's/.cpython-38//')
-    parent=$(dirname "$dir")
-    mkdir -p "$APP/Contents/Resources/python/lib/$parent"
-    cp "$f" "$APP/Contents/Resources/python/lib/$parent/$base" 2>/dev/null
+# Bundle a relocatable Python 3.8 runtime. Copying a random subset of the
+# standard library produced installations that failed before bridge.py ran.
+cp "$PY38/bin/python3.8" "$PYTHON_ROOT/"
+cp "$PY38/lib/libpython3.8.dylib" "$PYTHON_ROOT/lib/"
+cp "$GETTEXT_LIB" "$PYTHON_ROOT/lib/"
+RUNTIME_LIBRARIES="
+/opt/homebrew/opt/xz/lib/liblzma.5.dylib
+/opt/homebrew/opt/readline/lib/libreadline.8.dylib
+/opt/homebrew/opt/ncurses/lib/libncursesw.6.dylib
+/opt/homebrew/opt/ncurses/lib/libpanelw.6.dylib
+/opt/homebrew/opt/openssl@3/lib/libssl.3.dylib
+/opt/homebrew/opt/openssl@3/lib/libcrypto.3.dylib
+"
+for library in $RUNTIME_LIBRARIES; do
+  if [ ! -f "$library" ]; then
+    echo "ERROR: Python runtime dependency not found: $library"
+    exit 1
+  fi
+  cp "$library" "$PYTHON_ROOT/lib/"
 done
+rsync -a \
+  --exclude '__pycache__' \
+  --exclude 'site-packages' \
+  --exclude 'test' \
+  --exclude 'tests' \
+  --exclude 'idlelib' \
+  --exclude 'tkinter' \
+  --exclude 'turtledemo' \
+  --exclude 'ensurepip' \
+  "$PY38/lib/python3.8/" "$PYTHON_STDLIB/"
 
-# Also copy .py files for essential modules
-for mod in os.py posixpath.py stat.py genericpath.py types.py abc.py \
-    copyreg.py warnings.py weakref.py functools.py operator.py \
-    enum.py re.py sre_compile.py sre_parse.py sre_constants.py \
-    socket.py selectors.py threading.py queue.py struct.py \
-    traceback.py linecache.py tokenize.py token.py keyword.py \
-    ipaddress.py datetime.py contextlib.py textwrap.py \
-    _bootlocale.py _py_abc.py _weakrefset.py _collections_abc.py \
-    _threading_local.py __future__.py typing.py; do
-    cp "$mod" "$APP/Contents/Resources/python/lib/" 2>/dev/null
+# Remove build-machine absolute library paths from the embedded interpreter.
+install_name_tool -change \
+  "$PY38/lib/libpython3.8.dylib" \
+  "@executable_path/lib/libpython3.8.dylib" \
+  "$PYTHON_ROOT/python3.8"
+install_name_tool -change \
+  "$GETTEXT_LIB" \
+  "@executable_path/lib/libintl.8.dylib" \
+  "$PYTHON_ROOT/python3.8"
+install_name_tool -id "@rpath/libpython3.8.dylib" "$PYTHON_ROOT/lib/libpython3.8.dylib"
+install_name_tool -change \
+  "$GETTEXT_LIB" \
+  "@loader_path/libintl.8.dylib" \
+  "$PYTHON_ROOT/lib/libpython3.8.dylib"
+install_name_tool -id "@rpath/libintl.8.dylib" "$PYTHON_ROOT/lib/libintl.8.dylib"
+install_name_tool -add_rpath "@executable_path/lib" "$PYTHON_ROOT/python3.8"
+
+# Relocate optional native-module dependencies so importing them does not
+# require Homebrew on the destination Mac.
+for library in "$PYTHON_ROOT"/lib/*.dylib; do
+  install_name_tool -id "@rpath/$(basename "$library")" "$library"
 done
-
-# Copy essential packages
-for pkg in json collections encodings importlib; do
-    cp -r "$pkg" "$APP/Contents/Resources/python/lib/" 2>/dev/null
-done
-
-# Copy native extensions
-for ext in _json _struct _socket select math _datetime _bisect _heapq \
-    _contextvars _queue array _posixsubprocess fcntl _operator \
-    _collections _functools _statistics binascii zlib; do
-    cp lib-dynload/${ext}*.so "$APP/Contents/Resources/python/lib-dynload/" 2>/dev/null
+find "$PYTHON_ROOT" -type f \( -name 'python3.8' -o -name '*.dylib' -o -name '*.so' \) -print0 |
+while IFS= read -r -d '' binary; do
+  otool -L "$binary" | awk 'NR > 1 { print $1 }' | grep '^/opt/homebrew/' |
+  while IFS= read -r old_path; do
+    bundled="$PYTHON_ROOT/lib/$(basename "$old_path")"
+    if [ -f "$bundled" ]; then
+      install_name_tool -change "$old_path" "@rpath/$(basename "$old_path")" "$binary"
+    fi
+  done
 done
 
 # Copy site-packages
 cd "$PY38/lib/python3.8/site-packages"
 for pkg in zeroconf ifaddr async_timeout; do
-    cp -r "$pkg" "$APP/Contents/Resources/python/site-packages/" 2>/dev/null
+    cp -R "$pkg" "$PYTHON_STDLIB/site-packages/" 2>/dev/null
 done
-cp netifaces*.so "$APP/Contents/Resources/python/site-packages/" 2>/dev/null
+cp netifaces*.so "$PYTHON_STDLIB/site-packages/" 2>/dev/null
 
 echo ""
 echo "App size:"
 du -sh "$APP"
 
-# CODE SIGN THE APP (critical for macOS 13+)
+# Sign nested executable code before signing the outer app bundle.
 echo ""
 echo "Code signing app..."
-codesign --deep --force --verbose --sign "$SIGN_IDENTITY" "$APP" 2>&1 | grep -E "(Signing|replacing)"
+SIGN_OPTIONS=(--force --sign "$SIGN_IDENTITY")
+if [ "$SIGN_IDENTITY" != "-" ]; then
+  SIGN_OPTIONS+=(--timestamp --options runtime)
+fi
+find "$PYTHON_ROOT" -type f \( -name '*.dylib' -o -name '*.so' \) -exec \
+  codesign "${SIGN_OPTIONS[@]}" {} \;
+codesign "${SIGN_OPTIONS[@]}" "$PYTHON_ROOT/python3.8"
+codesign "${SIGN_OPTIONS[@]}" "$APP/Contents/MacOS/MK-OrbitControl"
+codesign "${SIGN_OPTIONS[@]}" "$APP"
 
 # Verify signature
-if ! codesign -v "$APP" 2>&1 | grep -q "valid"; then
-  echo "WARNING: Signature verification failed. App may not run."
+if ! codesign --verify --deep --strict --verbose=2 "$APP"; then
+  echo "ERROR: Signature verification failed."
+  exit 1
 fi
 
-# Create setup script (only needs to extract antelope modules)
-cat > "$DIST/setup.sh" << 'SETUP'
-#!/bin/bash
-echo "MK-OrbitControl Setup"
-echo "====================="
-
-MODULES="$HOME/Developer/MK-AntelopeControl/antelope_modules"
-if [ -d "$MODULES" ]; then
-    echo "Antelope modules already extracted. Ready to go!"
-    exit 0
-fi
-
-PANEL=$(find /Users/Shared/.AntelopeAudio -path "*/MacOS/*" -type f ! -name ".*" 2>/dev/null | head -1)
-if [ -z "$PANEL" ]; then
-    echo "ERROR: Antelope software not found. Install Antelope Launcher first."
-    exit 1
-fi
-
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PYTHON="$SCRIPT_DIR/MK-OrbitControl.app/Contents/Resources/python/python3.8"
-
-mkdir -p "$HOME/Developer/MK-AntelopeControl"
-
-echo "Extracting modules from your Antelope installation..."
-"$PYTHON" -c "
-import struct, zlib, marshal, os, sys, importlib.util
-path = '$PANEL'
-with open(path, 'rb') as f:
-    data = f.read()
-pyz = data.find(b'PYZ\x00')
-if pyz < 0: print('ERROR'); sys.exit(1)
-tp = struct.unpack('>I', data[pyz+8:pyz+12])[0]
-toc = marshal.loads(data[pyz+tp:])
-out = '$MODULES'
-os.makedirs(out, exist_ok=True)
-magic = importlib.util.MAGIC_NUMBER
-n = 0
-for e in toc:
-    nm, (ip, off, ln) = e
-    raw = zlib.decompress(data[pyz+off:pyz+off+ln])
-    pts = nm.split('.')
-    dp = os.path.join(out, *pts) if ip else (os.path.join(out, *pts[:-1]) if len(pts)>1 else out)
-    os.makedirs(dp, exist_ok=True)
-    pp = os.path.join(dp, '__init__.pyc') if ip else os.path.join(dp if ip else (os.path.join(out, *pts[:-1]) if len(pts)>1 else out), (pts[-1] if len(pts)>1 else pts[0])+'.pyc')
-    with open(pp, 'wb') as f: f.write(magic + b'\x00'*12 + raw)
-    n += 1
-print(f'Extracted {n} modules')
-"
-
-cp "$SCRIPT_DIR/MK-OrbitControl.app/Contents/Resources/bridge.py" "$HOME/Developer/MK-AntelopeControl/"
-echo "Done! Open MK-OrbitControl.app"
-SETUP
+# Copy the canonical setup script.
+cp "$PROJECT/setup.sh" "$DIST/setup.sh"
 chmod +x "$DIST/setup.sh"
 
 # Copy README
@@ -190,12 +192,24 @@ hdiutil create -volname "MK-OrbitControl v${VERSION}" -srcfolder "$DIST" -ov -fo
 
 # Code sign the DMG
 echo "Signing DMG..."
-codesign --force --verbose --sign "$SIGN_IDENTITY" "$DMG_FILE" 2>&1 | head -2
+codesign "${SIGN_OPTIONS[@]}" "$DMG_FILE" 2>&1 | head -2
+
+if [ -n "$NOTARY_PROFILE" ]; then
+  if [ "$SIGN_IDENTITY" = "-" ]; then
+    echo "ERROR: NOTARY_PROFILE requires a Developer ID SIGN_IDENTITY."
+    exit 1
+  fi
+  echo "Submitting DMG for notarization..."
+  xcrun notarytool submit "$DMG_FILE" --keychain-profile "$NOTARY_PROFILE" --wait
+  xcrun stapler staple "$DMG_FILE"
+  xcrun stapler validate "$DMG_FILE"
+fi
 
 echo ""
 echo "✓ Build complete!"
 echo "  DMG: $DMG_FILE"
 ls -lh "$DMG_FILE"
 echo ""
-echo "Next: Upload to GitHub Releases and notarize (optional):"
-echo "  xcrun notarytool submit '$DMG_FILE' --apple-id YOUR_EMAIL --password YOUR_PASSWORD"
+if [ -z "$NOTARY_PROFILE" ]; then
+  echo "Local package only: set SIGN_IDENTITY and NOTARY_PROFILE for a notarized release."
+fi

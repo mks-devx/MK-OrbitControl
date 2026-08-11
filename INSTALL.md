@@ -4,7 +4,7 @@
 
 ### Step 1: Download the DMG
 - Visit [Releases](https://github.com/mks-devx/MK-OrbitControl/releases/latest)
-- Download `MK-OrbitControl-v1.2.dmg` (or newer)
+- Download the current `MK-OrbitControl` DMG
 - Double-click to mount
 
 ### Step 2: Install the App
@@ -13,13 +13,14 @@
 3. Wait for copy to complete
 4. Eject the DMG when done
 
-### Step 3: Run Setup
-1. Open Terminal (Applications → Utilities → Terminal)
-2. Copy and paste this command:
+### Step 3: Complete Setup
+1. Launch MK-OrbitControl.
+2. If the setup notice appears, click **Run Setup**.
+3. If in-app setup fails, keep the DMG mounted and run this Terminal fallback:
    ```bash
    bash /Volumes/MK-OrbitControl/setup.sh
    ```
-3. Press Enter and wait for "Extracted X modules"
+4. Wait for "Extracted X modules" and reopen the app.
 
 ### Step 4: Launch
 - Open Finder → Applications
@@ -40,12 +41,6 @@
 3. Click **"Open"** in the dialog that appears
 4. App should launch normally now
 5. From then on, you can click it normally
-
-**Alternative (if right-click doesn't work):**
-```bash
-xattr -d com.apple.quarantine /Applications/MK-OrbitControl.app
-```
-Then double-click normally.
 
 ### ❌ "App can't be opened because it's from an unidentified developer"
 
@@ -82,11 +77,7 @@ This is normal if you've run it before. Just launch the app from Applications.
 1. Make sure Antelope Launcher is running (look in System Settings → General → Login Items)
 2. Check that your Synergy Core device is powered on and connected via Thunderbolt
 3. Click the **reconnect button** (circular arrow icon next to the connection status) to force an immediate re-scan
-4. If still offline, restart the AntelopeAudioServer:
-   ```bash
-   sudo killall AntelopeAudioServer
-   ```
-   Wait 5 seconds, then click the reconnect button again.
+4. If still offline, use **Restart Antelope Server** in MK-OrbitControl. This reopens Antelope Launcher without terminating system processes.
 
 ### ❌ Device disconnects when unplugging Thunderbolt cable
 
@@ -121,10 +112,10 @@ pyenv install 3.8.20
 swift build -c release
 
 # Run setup to extract Antelope modules
-bash dist-bundled/setup.sh
+bash setup.sh
 
 # Run the app
-.build/release/MKAntelopeControl
+.build/release/MKOrbitControl
 ```
 
 ### Build DMG for Distribution
@@ -141,8 +132,9 @@ bash build-dist.sh
 | File | Location | Purpose |
 |------|----------|---------|
 | **MK-OrbitControl.app** | `/Applications/` | The menu bar app |
-| **bridge.py** | `~/Developer/MK-AntelopeControl/` | Python bridge to Antelope API |
-| **antelope_modules/** | `~/Developer/MK-AntelopeControl/` | Extracted from your Antelope installation |
+| **bridge-token** | `~/Library/Application Support/MK-OrbitControl/` | Owner-only authentication token for the local bridge |
+| **setup-complete** | `~/Library/Application Support/MK-OrbitControl/` | Setup completion marker |
+| **antelope_modules/** | `~/Library/Application Support/MK-OrbitControl/` | Extracted from your Antelope installation |
 
 Nothing else is installed. The app talks to the official Antelope Audio server on your Mac (AntelopeAudioServer), which is part of Antelope Launcher.
 
@@ -154,8 +146,8 @@ Nothing else is installed. The app talks to the official Antelope Audio server o
 # Remove app
 rm -rf /Applications/MK-OrbitControl.app
 
-# (Optional) Clean up developer files
-rm -rf ~/Developer/MK-AntelopeControl
+# (Optional) Remove extracted compatibility modules and bridge
+rm -rf "$HOME/Library/Application Support/MK-OrbitControl"
 ```
 
 ---
@@ -163,6 +155,7 @@ rm -rf ~/Developer/MK-AntelopeControl
 ## System Requirements
 
 - **macOS 13 or later** (13, 14, 15)
+- **Apple Silicon Mac** for the downloadable build
 - **Antelope Launcher** installed (free from antelopeaudio.com)
 - **Synergy Core device** (Orion Studio III, Discrete 4, etc.)
 - **Thunderbolt connection** to device
@@ -175,5 +168,3 @@ Having issues? [Open an issue on GitHub](https://github.com/mks-devx/MK-OrbitCon
 - Your **device model** (Orion Studio III, Discrete 4, etc.)
 - Your **macOS version** (Settings → About → macOS)
 - The **exact error message** you see
-
-Or [buy me a coffee](https://buymeacoffee.com/mk_tools) to show support!

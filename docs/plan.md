@@ -1,10 +1,12 @@
 # MK-AntelopeControl Implementation Plan
 
+> **Historical document:** this plan describes the original prototype and is not the current architecture or backlog. See `README.md` and the current source for authoritative behaviour.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** macOS menu bar app to control Antelope Orion Studio III monitor volume, mute, dim, and output selection — without the laggy Antelope Control Panel.
 
-**Architecture:** Swift Package menu bar app. Reads device state via TCP port 2021 (JSON cyclic reports). Sends commands by spawning bridge.py via Python 3.8 (using Antelope's own RemoteDevice API). No external dependencies.
+**Original architecture:** Swift Package menu bar app. Reads device state from local JSON cyclic reports and sends commands through a persistent local Python 3.8 bridge using Antelope's RemoteDevice API.
 
 **Tech Stack:** Swift 6 / SwiftUI, Python 3.8 (bridge), TCP sockets, Antelope RemoteDevice API
 

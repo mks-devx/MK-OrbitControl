@@ -11,7 +11,18 @@ let package = Package(
         .executableTarget(
             name: "MKOrbitControl",
             dependencies: ["HotKey"],
-            path: "Sources/MKOrbitControl"
-        )
+            path: "Sources/MKOrbitControl",
+            exclude: [
+                "AppIcon.icns",
+                "icon_knob.icns",
+                "icon_orbit.icns",
+                "icon_speaker.icns",
+                "icon_waveform.icns",
+            ]
+        ),
+        .testTarget(
+            name: "MKOrbitControlTests",
+            dependencies: ["MKOrbitControl"]
+        ),
     ]
 )

@@ -34,30 +34,32 @@ struct SettingsView: View {
     @State private var selectedTab: SettingsTab = .appearance
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
-    private let bgDark = Color(red: 0.11, green: 0.11, blue: 0.13)
-    private let bgSidebar = Color(red: 0.08, green: 0.08, blue: 0.10)
-    private let bgCard = Color(red: 0.15, green: 0.15, blue: 0.17)
-    private let borderColor = Color.white.opacity(0.06)
-    private let textMain = Color.white.opacity(0.9)
-    private let textSub = Color.white.opacity(0.5)
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.4"
+    }
+
+    private var bgMain: Color { Color(nsColor: .windowBackgroundColor) }
+    private var bgSidebar: Color { Color(nsColor: .underPageBackgroundColor) }
+    private var bgCard: Color { Color(nsColor: .controlBackgroundColor) }
+    private var borderColor: Color { Color(nsColor: .separatorColor) }
 
     var body: some View {
         HStack(spacing: 0) {
             sidebar
 
             Rectangle()
-                .fill(Color.white.opacity(0.04))
-                .frame(width: 0.5)
+                .fill(borderColor)
+                .frame(width: 1)
 
             ZStack {
-                bgDark
+                bgMain
                 contentForTab(selectedTab)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
-        .frame(width: 600, height: 450)
-        .background(bgDark)
-        .preferredColorScheme(.dark)
+        .frame(minWidth: 560, idealWidth: 640, minHeight: 420, idealHeight: 500)
+        .background(bgMain)
+        .preferredColorScheme(themeManager.currentTheme.isDark ? .dark : .light)
     }
 
     // MARK: - Sidebar
@@ -118,9 +120,10 @@ struct SettingsView: View {
 
     private var appearanceContent: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
                 tabHeader("Appearance")
 
+                appearanceSectionLabel("COLOUR")
                 settingsGroup {
                     settingsRow {
                         Text("Theme")
@@ -143,9 +146,69 @@ struct SettingsView: View {
                         }
                         .frame(width: 200)
                     }
+                }
+
+                appearanceSectionLabel("SURFACE")
+                settingsGroup {
+                    settingsRow {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Interface Material")
+                                .font(.system(size: 13))
+                            Text("Liquid Glass requires macOS 26 or later")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Picker("", selection: Binding(
+                            get: { themeManager.surfaceStyle },
+                            set: { themeManager.setSurfaceStyle($0) }
+                        )) {
+                            ForEach(InterfaceSurfaceStyle.allCases) { style in
+                                Text(style.rawValue)
+                                    .tag(style)
+                                    .disabled(!style.isAvailable)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .frame(width: 240)
+                    }
 
                     Divider().padding(.leading, 12)
 
+                    settingsRow {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Background Transparency")
+                                .font(.system(size: 13))
+                            Text(themeManager.surfaceStyle == .solid
+                                 ? "Available with Translucent or Liquid Glass"
+                                 : "Show more of the desktop behind the panel")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 16)
+                        HStack(spacing: 10) {
+                            Slider(
+                                value: Binding(
+                                    get: { themeManager.backgroundTransparency },
+                                    set: { themeManager.setBackgroundTransparency($0) }
+                                ),
+                                in: 0...0.75,
+                                step: 0.05
+                            )
+                            .frame(width: 130)
+                            Text("\(Int((themeManager.backgroundTransparency * 100).rounded()))%")
+                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .frame(width: 34, alignment: .trailing)
+                        }
+                        .disabled(themeManager.surfaceStyle == .solid)
+                        .opacity(themeManager.surfaceStyle == .solid ? 0.45 : 1)
+                    }
+                }
+
+                appearanceSectionLabel("DETAILS")
+                settingsGroup {
                     settingsRow {
                         Text("Menu Bar Icon")
                             .font(.system(size: 13))
@@ -183,7 +246,7 @@ struct SettingsView: View {
                                 }
                             }
                         )) {
-                            ForEach(AppFont.allCases) { font in
+                            ForEach(AppFont.allCases.filter(\.isAvailable)) { font in
                                 Text(font.displayName).tag(font.rawValue)
                             }
                         }
@@ -193,6 +256,15 @@ struct SettingsView: View {
             }
             .padding(24)
         }
+    }
+
+    private func appearanceSectionLabel(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 10, weight: .semibold))
+            .tracking(1)
+            .foregroundStyle(.secondary)
+            .padding(.leading, 4)
+            .padding(.bottom, -8)
     }
 
     // MARK: - General
@@ -337,7 +409,7 @@ struct SettingsView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color(red: 0.15, green: 0.15, blue: 0.17))
+        .background(bgCard)
     }
 
     private var accessibilityWarning: some View {
@@ -416,7 +488,7 @@ struct SettingsView: View {
                                     .foregroundColor(.secondary)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 3)
-                                    .background(Color(red: 0.15, green: 0.15, blue: 0.17))
+                                    .background(bgCard)
                                     .cornerRadius(4)
                                 Button {
                                     midiManager.removeMapping(for: action)
@@ -453,7 +525,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("MK-OrbitControl")
                                 .font(.system(size: 18, weight: .bold))
-                            Text("Version 1.4")
+                            Text("Version \(appVersion)")
                                 .font(.system(size: 13))
                                 .foregroundColor(.secondary)
                         }
@@ -467,21 +539,8 @@ struct SettingsView: View {
 
                         Divider()
 
-                        HStack(spacing: 12) {
-                            Button("Check for Updates") {
-                                UpdateChecker.shared.checkManually()
-                            }
-
-                            Button {
-                                if let url = URL(string: "https://buymeacoffee.com/mk_tools") {
-                                    NSWorkspace.shared.open(url)
-                                }
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Text("☕")
-                                    Text("Support")
-                                }
-                            }
+                        Button("Check for Updates") {
+                            UpdateChecker.shared.checkManually()
                         }
                     }
                     .padding(.horizontal, 16)
@@ -504,11 +563,11 @@ struct SettingsView: View {
         VStack(spacing: 0) {
             content()
         }
-        .background(Color(red: 0.15, green: 0.15, blue: 0.17))
+        .background(bgCard)
         .cornerRadius(8)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                .stroke(borderColor, lineWidth: 1)
         )
     }
 
@@ -544,7 +603,7 @@ struct HotkeyRecorderButton: View {
                 Text(displayText)
                     .font(.system(size: 11, weight: .medium).monospacedDigit())
                     .frame(width: 110, height: 24)
-                    .background(isRecording ? Color.accentColor.opacity(0.25) : Color(red: 0.18, green: 0.18, blue: 0.20))
+                    .background(isRecording ? Color.accentColor.opacity(0.25) : Color(nsColor: .controlBackgroundColor))
                     .cornerRadius(6)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
@@ -564,6 +623,7 @@ struct HotkeyRecorderButton: View {
                 .buttonStyle(.plain)
             }
         }
+        .onDisappear { stopRecording() }
     }
 
     private var displayText: String {

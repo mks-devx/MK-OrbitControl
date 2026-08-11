@@ -12,7 +12,7 @@ Daemon mode (stays connected, reads JSON commands from stdin):
     Then write: {"cmd":"set_volume","ch":0,"val":44}
     Responds:   {"ok":true}
 
-Channel IDs: 0=MON A, 1=MON B, 2=HP1, 3=HP2, 4=Line
+Channel IDs used by the app: 0=MON A, 1=HP1, 2=HP2, 5=MON B
 """
 import sys
 import os
@@ -22,9 +22,45 @@ import marshal
 import struct
 import socket
 import time
+import hmac
+import re
 
-MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "antelope_modules")
+MODULES_DIR = os.environ.get(
+    "MK_ORBIT_MODULES_DIR",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "antelope_modules"),
+)
 SERVER_HOST = "127.0.0.1"
+VALID_COMMANDS = {"set_volume", "set_mute", "set_dim", "set_mono"}
+VALID_CHANNELS = {0, 1, 2, 5}
+MAX_COMMAND_BYTES = 4096
+PREFERRED_SERVER_PORTS = (2024, 2021, 2023, 2022, 2025, 2020)
+
+
+def candidate_ports():
+    """Return likely ports first, then Antelope's dynamic local port range."""
+    return list(PREFERRED_SERVER_PORTS) + [
+        port for port in range(2020, 2101) if port not in PREFERRED_SERVER_PORTS
+    ]
+
+
+def validate_command(message, expected_token=None):
+    """Return a validated (command, channel, value) tuple."""
+    command = message.get("cmd", "")
+    channel = int(message.get("ch", -1))
+    value = int(message.get("val", -1))
+    if expected_token is not None:
+        supplied_token = str(message.get("token", ""))
+        if not expected_token or not hmac.compare_digest(supplied_token, expected_token):
+            raise ValueError("unauthorized")
+    if command not in VALID_COMMANDS:
+        raise ValueError("unknown command")
+    if channel not in VALID_CHANNELS:
+        raise ValueError("invalid channel")
+    if command == "set_volume" and not 0 <= value <= 96:
+        raise ValueError("volume must be between 0 and 96")
+    if command != "set_volume" and value not in (0, 1):
+        raise ValueError("toggle value must be 0 or 1")
+    return command, channel, value
 
 
 def find_device():
@@ -33,28 +69,53 @@ def find_device():
     if not os.path.exists(base):
         return None, None, None, None
 
-    for entry in os.listdir(base):
+    candidates = []
+    for entry in sorted(os.listdir(base)):
         panels_dir = os.path.join(base, entry, "panels")
         if not os.path.isdir(panels_dir):
             continue
         if entry in ("managerserver", "antelopelauncher"):
             continue
-        for f in sorted(os.listdir(panels_dir), reverse=True):
-            if f.startswith("report_format_"):
-                rf_path = os.path.join(panels_dir, f)
-                # Get device name and serial from admin server
-                dev_name, serial = get_device_info_from_server()
-                if not dev_name:
-                    dev_name = entry
-                if not serial:
-                    serial = "0000000000000"
-                return entry, rf_path, dev_name, serial
+        formats = [name for name in os.listdir(panels_dir) if name.startswith("report_format_")]
+        if formats:
+            formats.sort(key=natural_sort_key, reverse=True)
+            candidates.append((entry, os.path.join(panels_dir, formats[0])))
+
+    if not candidates:
+        return None, None, None, None
+
+    device_name, serial = get_device_info_from_server()
+    if device_name:
+        normalized_name = normalize_device_name(device_name)
+        matches = [item for item in candidates if normalize_device_name(item[0]) in normalized_name]
+        if len(matches) == 1:
+            slug, report_path = matches[0]
+            return slug, report_path, device_name, serial or "0000000000000"
+
+    # Multiple unmatched panels are unsafe because their report formats and
+    # channel maps may differ. Only fall back when exactly one panel exists.
+    if len(candidates) == 1:
+        slug, report_path = candidates[0]
+        return slug, report_path, device_name or slug, serial or "0000000000000"
     return None, None, None, None
+
+
+def natural_sort_key(value):
+    return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", value)]
+
+
+def normalize_device_name(value):
+    return "".join(character for character in value.lower() if character.isalnum())
+
+
+def is_cyclic_greeting(data):
+    """Accept the compact cyclic greeting used by newer Antelope servers."""
+    return b'"type": "cyclic"' in data or b'"type":"cyclic"' in data
 
 
 def get_device_info_from_server():
     """Read device name and serial from the admin server welcome message."""
-    for port in [2020, 2021, 2022, 2023, 2024, 2025]:
+    for port in candidate_ports():
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(2)
@@ -63,19 +124,19 @@ def get_device_info_from_server():
             if len(h) < 4:
                 s.close()
                 continue
-            length = struct.unpack(">I", h)[0]
-            data = b""
-            while len(data) < length:
-                chunk = s.recv(min(8192, length - len(data)))
-                if not chunk:
-                    break
-                data += chunk
+            total_length = struct.unpack(">I", h)[0]
+            payload_length = total_length - 4
+            if not 0 < payload_length <= 2_000_000 - 4:
+                s.close()
+                continue
+            data = recv_exact(s, payload_length)
             s.close()
+            if data is None:
+                continue
             text = data.decode("utf-8", errors="replace")
             if "notification" in text and "Plugged devices" in text:
                 # Parse device name and serial
                 # Format: "DeviceName with SN:1234567890"
-                import re
                 # Parse JSON to get the contents text
                 try:
                     import json as _json
@@ -94,15 +155,20 @@ def get_device_info_from_server():
     return None, None
 
 
-DEVICE_SLUG, REPORT_FORMAT_PATH, DEVICE_NAME, DEVICE_SERIAL = find_device()
-if not DEVICE_SLUG:
-    DEVICE_SLUG = "orionstudioiii"
-    REPORT_FORMAT_PATH = "/Users/Shared/.AntelopeAudio/orionstudioiii/panels/report_format_2.3.1"
-    DEVICE_NAME = "OrionStudio_III"
-    DEVICE_SERIAL = "0000000000000"
+DEVICE_SLUG = None
+REPORT_FORMAT_PATH = None
+DEVICE_NAME = None
+DEVICE_SERIAL = None
 
 
 def setup_environment():
+    global DEVICE_SLUG, REPORT_FORMAT_PATH, DEVICE_NAME, DEVICE_SERIAL
+    if DEVICE_SLUG is None:
+        DEVICE_SLUG, REPORT_FORMAT_PATH, DEVICE_NAME, DEVICE_SERIAL = find_device()
+    if not DEVICE_SLUG or not REPORT_FORMAT_PATH:
+        raise RuntimeError("Cannot safely identify one installed Antelope device panel")
+    if not os.path.isdir(MODULES_DIR):
+        raise RuntimeError("Antelope modules are missing; run setup.sh first")
     sys.path.insert(0, MODULES_DIR)
     os.environ["SETTINGSPY_MODULE"] = ""
     os.environ["SETTINGSPY_CATALOG"] = ""
@@ -177,24 +243,23 @@ class FakeServiceInfo:
 
 
 def find_device_port():
-    for port in [2021, 2023, 2022, 2024, 2025, 2020]:
+    for port in candidate_ports():
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(2)
             s.connect((SERVER_HOST, port))
-            h = s.recv(4)
-            if len(h) < 4:
+            h = recv_exact(s, 4)
+            if h is None:
                 s.close()
                 continue
-            length = struct.unpack(">I", h)[0]
-            data = b""
-            while len(data) < length:
-                chunk = s.recv(min(8192, length - len(data)))
-                if not chunk:
-                    break
-                data += chunk
+            total_length = struct.unpack(">I", h)[0]
+            payload_length = total_length - 4
+            if not 0 < payload_length <= 2_000_000 - 4:
+                s.close()
+                continue
+            data = recv_exact(s, payload_length)
             s.close()
-            if b"cyclic" in data and length > 500:
+            if data is not None and is_cyclic_greeting(data):
                 return port
         except Exception:
             try:
@@ -202,6 +267,16 @@ def find_device_port():
             except Exception:
                 pass
     return None
+
+
+def recv_exact(sock, count):
+    data = bytearray()
+    while len(data) < count:
+        chunk = sock.recv(count - len(data))
+        if not chunk:
+            return None
+        data.extend(chunk)
+    return bytes(data)
 
 
 def connect():
@@ -216,11 +291,28 @@ def connect():
 
     si = FakeServiceInfo(port=port)
     device = RemoteDevice(si)
-    device.try_connect(report_format=report_format)
-    device.start()
+    if hasattr(device, "try_connect"):
+        # Older Antelope panels connect and start in two steps.
+        device.try_connect(report_format=report_format)
+        device.start()
+    else:
+        # Current panels accept the report format directly in start().
+        device.start(report_format=report_format)
     time.sleep(2)
 
-    if not device.is_running():
+    is_running = getattr(device, "is_running", None)
+    if callable(is_running):
+        running = is_running()
+    else:
+        running = bool(getattr(device, "is_alive", False))
+    is_connected = getattr(device, "is_connected", None)
+    if callable(is_connected):
+        connected = is_connected()
+    elif is_connected is None:
+        connected = running
+    else:
+        connected = bool(is_connected)
+    if not running or not connected:
         raise RuntimeError("RemoteDevice failed to start")
 
     return device
@@ -228,14 +320,15 @@ def connect():
 
 def run_daemon():
     """Stay connected. Listen on TCP port 17580 for JSON commands."""
+    auth_token = os.environ.get("MK_ORBIT_AUTH_TOKEN", "")
+    if len(auth_token) < 32:
+        raise RuntimeError("MK_ORBIT_AUTH_TOKEN is missing or invalid")
+
     setup_environment()
     fix_circular_imports()
-    device = connect()
-    consecutive_failures = 0
-
-    valid = {"set_volume", "set_mute", "set_dim", "set_mono"}
-
-    # Start TCP server on localhost
+    # Keep the command endpoint alive even when Antelope is temporarily down.
+    # A command can then trigger recovery instead of finding a dead bridge.
+    device = None
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     srv.bind(("127.0.0.1", 17580))
@@ -244,6 +337,12 @@ def run_daemon():
 
     sys.stderr.write("Bridge daemon listening on 127.0.0.1:17580\n")
     sys.stderr.flush()
+
+    try:
+        device = connect()
+    except Exception as connect_error:
+        sys.stderr.write("Initial Antelope connection failed: %s\n" % connect_error)
+        sys.stderr.flush()
 
     while True:
         try:
@@ -261,6 +360,8 @@ def run_daemon():
                 if not chunk:
                     break
                 data += chunk
+                if len(data) > MAX_COMMAND_BYTES:
+                    raise ValueError("command is too large")
                 if b"\n" in data:
                     break
 
@@ -269,38 +370,34 @@ def run_daemon():
                 client.close()
                 continue
 
-            msg = json.loads(line)
-            cmd = msg.get("cmd", "")
-            ch = int(msg.get("ch", 0))
-            val = int(msg.get("val", 0))
+            cmd, ch, val = validate_command(json.loads(line), auth_token)
+            result = False
+            if device is not None:
+                try:
+                    result = device.request(cmd, ch, val, timeout=5)
+                except Exception:
+                    result = False
 
-            if cmd in valid:
-                result = device.request(cmd, ch, val, timeout=5)
-                if result:
-                    consecutive_failures = 0
-                    resp = '{"ok":true}\n'
+            if not result:
+                # One failed monitor command is enough evidence to replace the
+                # stale RemoteDevice session. Reconnect and retry once.
+                if device is not None:
+                    try:
+                        device.stop()
+                    except Exception:
+                        pass
+                    device = None
+                try:
+                    device = connect()
+                    result = device.request(cmd, ch, val, timeout=5)
+                except Exception as reconnect_error:
+                    resp = '{"ok":false,"error":' + json.dumps(
+                        "reconnect failed: " + str(reconnect_error)
+                    ) + '}\n'
                 else:
-                    consecutive_failures += 1
-                    if consecutive_failures >= 3:
-                        # Connection likely dropped — reconnect
-                        sys.stderr.write("3 consecutive failures, reconnecting...\n")
-                        sys.stderr.flush()
-                        try:
-                            device.stop()
-                        except Exception:
-                            pass
-                        try:
-                            device = connect()
-                            consecutive_failures = 0
-                            # Retry the command after reconnect
-                            result = device.request(cmd, ch, val, timeout=5)
-                            resp = '{"ok":true}\n' if result else '{"ok":false}\n'
-                        except Exception as re_err:
-                            resp = '{"ok":false,"error":' + json.dumps("reconnect failed: " + str(re_err)) + '}\n'
-                    else:
-                        resp = '{"ok":false}\n'
+                    resp = '{"ok":true}\n' if result else '{"ok":false}\n'
             else:
-                resp = '{"ok":false,"error":"unknown"}\n'
+                resp = '{"ok":true}\n'
 
             client.sendall(resp.encode())
             client.close()
@@ -312,7 +409,8 @@ def run_daemon():
                 pass
 
     srv.close()
-    device.stop()
+    if device is not None:
+        device.stop()
 
 
 def run_single():
@@ -325,9 +423,12 @@ def run_single():
     channel_id = int(sys.argv[2])
     value = int(sys.argv[3])
 
-    valid = ["set_volume", "set_mute", "set_dim", "set_mono"]
-    if command not in valid:
-        print("Unknown command: " + command)
+    try:
+        command, channel_id, value = validate_command(
+            {"cmd": command, "ch": channel_id, "val": value}
+        )
+    except ValueError as error:
+        print(str(error))
         sys.exit(1)
 
     setup_environment()
@@ -347,8 +448,6 @@ def run_stdin():
     fix_circular_imports()
     device = connect()
 
-    valid = {"set_volume", "set_mute", "set_dim", "set_mono"}
-
     sys.stdout.write('{"ready":true}\n')
     sys.stdout.flush()
 
@@ -357,17 +456,11 @@ def run_stdin():
         if not line:
             continue
         try:
-            msg = json.loads(line)
-            cmd = msg.get("cmd", "")
-            ch = int(msg.get("ch", 0))
-            val = int(msg.get("val", 0))
-            if cmd in valid:
-                result = device.request(cmd, ch, val, timeout=5)
-                sys.stdout.write('{"ok":true}\n' if result else '{"ok":false}\n')
-            else:
-                sys.stdout.write('{"ok":false}\n')
-        except Exception:
-            sys.stdout.write('{"ok":false}\n')
+            cmd, ch, val = validate_command(json.loads(line))
+            result = device.request(cmd, ch, val, timeout=5)
+            sys.stdout.write('{"ok":true}\n' if result else '{"ok":false}\n')
+        except Exception as error:
+            sys.stdout.write('{"ok":false,"error":' + json.dumps(str(error)) + '}\n')
         sys.stdout.flush()
 
     device.stop()

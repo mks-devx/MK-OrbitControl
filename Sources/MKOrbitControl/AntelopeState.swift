@@ -19,14 +19,43 @@ private struct ChannelEntry: Decodable {
     let mono: Int
 }
 
+enum AntelopeProtocol {
+    static let headerSize = 4
+    private static let preferredPorts: [UInt16] = [2024, 2021, 2023, 2022, 2025, 2020]
+
+    /// Antelope assigns the device endpoint dynamically. It has moved beyond
+    /// the original 2020...2025 window after server restarts in real use.
+    static let candidatePorts: [UInt16] = {
+        preferredPorts + Array(UInt16(2020)...UInt16(2100)).filter { !preferredPorts.contains($0) }
+    }()
+
+    static func payloadLength(totalFrameLength: Int) -> Int? {
+        guard totalFrameLength > headerSize, totalFrameLength <= 2_000_000 else { return nil }
+        return totalFrameLength - headerSize
+    }
+
+    static func totalFrameLength(payloadLength: Int) -> UInt32? {
+        guard payloadLength > 0, payloadLength <= 2_000_000 - headerSize else { return nil }
+        return UInt32(payloadLength + headerSize)
+    }
+
+    static func isCyclicPayload(_ payload: [UInt8]) -> Bool {
+        guard let text = String(bytes: payload, encoding: .utf8) else { return false }
+        return text.contains("\"type\": \"cyclic\"") || text.contains("\"type\":\"cyclic\"")
+    }
+}
+
 // MARK: - AntelopeStateReader
 
 final class AntelopeStateReader {
 
     private let deviceState: DeviceState
     private var thread: Thread?
+    private let stateLock = NSLock()
     private var currentFd: Int32 = -1
-    private var _forceReconnect = false
+    private var forceReconnect = false
+    private var lastUIUpdate: Date = .distantPast
+    private let minimumUIUpdateInterval: TimeInterval = 1.0 / 30.0
 
     init(deviceState: DeviceState) {
         self.deviceState = deviceState
@@ -34,15 +63,16 @@ final class AntelopeStateReader {
 
     /// Force drop current connection and reconnect immediately
     func reconnect() {
-        _forceReconnect = true
-        // Close the current socket to break out of the read loop instantly
-        if currentFd >= 0 {
-            shutdown(currentFd, SHUT_RDWR)
+        let fd = stateLock.withCriticalSection { () -> Int32 in
+            forceReconnect = true
+            return currentFd
         }
+        // The reader thread owns close(); shutdown only interrupts a blocking recv.
+        if fd >= 0 { shutdown(fd, SHUT_RDWR) }
     }
 
     deinit {
-        if currentFd >= 0 { close(currentFd); currentFd = -1 }
+        stop()
     }
 
     func start() {
@@ -58,7 +88,8 @@ final class AntelopeStateReader {
     func stop() {
         thread?.cancel()
         thread = nil
-        if currentFd >= 0 { close(currentFd); currentFd = -1 }
+        let fd = stateLock.withCriticalSection { currentFd }
+        if fd >= 0 { shutdown(fd, SHUT_RDWR) }
     }
 
     // MARK: - Main loop
@@ -67,11 +98,12 @@ final class AntelopeStateReader {
         while !Thread.current.isCancelled {
             let fd = findAndConnect()
             if fd < 0 {
+                markDisconnected()
                 Thread.sleep(forTimeInterval: 2)
                 continue
             }
 
-            currentFd = fd
+            stateLock.withCriticalSection { currentFd = fd }
 
             var tv = timeval(tv_sec: 15, tv_usec: 0)
             setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
@@ -80,28 +112,21 @@ final class AntelopeStateReader {
             var linger = linger(l_onoff: 1, l_linger: 0)
             setsockopt(fd, SOL_SOCKET, SO_LINGER, &linger, socklen_t(MemoryLayout<linger>.size))
 
-            var consecutiveFailures = 0
-
-            while !Thread.current.isCancelled && !_forceReconnect {
+            while !Thread.current.isCancelled && !shouldForceReconnect() {
                 guard let payload = readOneMessage(fd: fd) else {
-                    consecutiveFailures += 1
-                    // Only give up after many failures (timeout = 15s each, so 10 = 2.5 min)
-                    // This keeps the connection alive through idle periods
-                    if consecutiveFailures >= 10 || _forceReconnect { break }
-                    // Check if socket is still alive by peeking
-                    var buf = [UInt8](repeating: 0, count: 1)
-                    let peek = recv(fd, &buf, 1, MSG_PEEK | MSG_DONTWAIT)
-                    if peek == 0 { break } // connection closed by server
-                    // peek < 0 with EAGAIN/EWOULDBLOCK = still connected, just no data
-                    continue
+                    // A timeout or partial frame makes the stream boundary unknown.
+                    // Reconnect instead of interpreting remaining bytes as a new header.
+                    break
                 }
-                consecutiveFailures = 0
                 parseAndApply(payload: payload)
             }
-            _forceReconnect = false
 
+            stateLock.withCriticalSection {
+                if currentFd == fd { currentFd = -1 }
+                forceReconnect = false
+            }
             close(fd)
-            currentFd = -1
+            markDisconnected()
 
             if !Thread.current.isCancelled {
                 Thread.sleep(forTimeInterval: 1)
@@ -111,20 +136,40 @@ final class AntelopeStateReader {
 
     // MARK: - Find device server port and connect
 
-    // Load report format once for init handshake
+    // Load the newest installed report format once for the init handshake.
     private static let reportFormatJSON: String? = {
-        let path = "/Users/Shared/.AntelopeAudio/orionstudioiii/panels/report_format_2.3.1"
-        guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+        let fileManager = FileManager.default
+        let base = URL(fileURLWithPath: "/Users/Shared/.AntelopeAudio", isDirectory: true)
+        guard let deviceDirectories = try? fileManager.contentsOfDirectory(
+            at: base,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else { return nil }
+
+        let candidates = deviceDirectories.flatMap { deviceURL -> [URL] in
+            let panelsURL = deviceURL.appendingPathComponent("panels", isDirectory: true)
+            return (try? fileManager.contentsOfDirectory(
+                at: panelsURL,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            ))?.filter { $0.lastPathComponent.hasPrefix("report_format_") } ?? []
+        }.sorted {
+            $0.lastPathComponent.compare(
+                $1.lastPathComponent,
+                options: [.numeric, .caseInsensitive]
+            ) == .orderedDescending
+        }
+
+        guard let path = candidates.first,
+              let data = try? Data(contentsOf: path),
               let str = String(data: data, encoding: .utf8) else { return nil }
         return str
     }()
 
     private func findAndConnect() -> Int32 {
-        let hosts = ["127.0.0.1", "192.168.0.235", "192.168.1.20"]
-        let ports: [UInt16] = [2024, 2021, 2023, 2022, 2025, 2020]
-
+        let hosts = ["127.0.0.1"]
         for host in hosts {
-            for port in ports {
+            for port in AntelopeProtocol.candidatePorts {
                 let fd = connectWithTimeout(host: host, port: port, timeoutSec: 2)
                 if fd < 0 { continue }
 
@@ -140,12 +185,9 @@ final class AntelopeStateReader {
                     continue
                 }
 
-                if payload.count > 500 {
-                    let str = String(bytes: payload, encoding: .utf8) ?? ""
-                    if str.contains("cyclic") {
-                        parseAndApply(payload: payload)
-                        return fd
-                    }
+                if AntelopeProtocol.isCyclicPayload(payload) {
+                    parseAndApply(payload: payload)
+                    return fd
                 }
 
                 close(fd)
@@ -159,13 +201,11 @@ final class AntelopeStateReader {
         guard let rfJSON = Self.reportFormatJSON else { return }
         let cmd = "[\"initialize_format\",[\(rfJSON)],{}]"
         guard let data = cmd.data(using: .utf8) else { return }
-        var len = UInt32(data.count).bigEndian
-        _ = withUnsafeBytes(of: &len) { ptr in
-            send(fd, ptr.baseAddress!, 4, 0)
+        guard var len = AntelopeProtocol.totalFrameLength(payloadLength: data.count)?.bigEndian else {
+            return
         }
-        _ = data.withUnsafeBytes { ptr in
-            send(fd, ptr.baseAddress!, data.count, 0)
-        }
+        guard withUnsafeBytes(of: &len, { sendAll(fd: fd, bytes: $0) }) else { return }
+        _ = data.withUnsafeBytes { sendAll(fd: fd, bytes: $0) }
     }
 
     // MARK: - Read one length-prefixed message
@@ -174,9 +214,11 @@ final class AntelopeStateReader {
         var lenBuf = [UInt8](repeating: 0, count: 4)
         guard recvAll(fd: fd, buf: &lenBuf, count: 4) else { return nil }
 
-        let msgLen = Int(UInt32(lenBuf[0]) << 24 | UInt32(lenBuf[1]) << 16 |
-                        UInt32(lenBuf[2]) << 8  | UInt32(lenBuf[3]))
-        guard msgLen > 0, msgLen < 2_000_000 else { return nil }
+        let totalFrameLength = Int(UInt32(lenBuf[0]) << 24 | UInt32(lenBuf[1]) << 16 |
+                                   UInt32(lenBuf[2]) << 8  | UInt32(lenBuf[3]))
+        guard let msgLen = AntelopeProtocol.payloadLength(totalFrameLength: totalFrameLength) else {
+            return nil
+        }
 
         var payload = [UInt8](repeating: 0, count: msgLen)
         guard recvAll(fd: fd, buf: &payload, count: msgLen) else { return nil }
@@ -221,16 +263,19 @@ final class AntelopeStateReader {
 
         let peakLevels = contents.peaks_meters ?? []
 
+        let updateDate = Date()
+        guard updateDate.timeIntervalSince(lastUIUpdate) >= minimumUIUpdateInterval else {
+            return
+        }
+        lastUIUpdate = updateDate
+
         let ds = self.deviceState
         DispatchQueue.main.async {
-            for (ch, state) in updates {
-                ds.channels[ch] = state
-            }
-            if !peakLevels.isEmpty {
-                ds.peaks.levels = peakLevels
-                ds.peaks.updateSmooth()
-            }
-            ds.lastDataReceived = Date()
+            ds.applySnapshot(
+                channelUpdates: updates,
+                peakLevels: peakLevels,
+                at: updateDate
+            )
         }
     }
 
@@ -250,7 +295,10 @@ final class AntelopeStateReader {
         var addr = sockaddr_in()
         addr.sin_family = sa_family_t(AF_INET)
         addr.sin_port = port.bigEndian
-        inet_pton(AF_INET, host, &addr.sin_addr)
+        guard inet_pton(AF_INET, host, &addr.sin_addr) == 1 else {
+            close(fd)
+            return -1
+        }
 
         let cr = withUnsafePointer(to: &addr) { ptr in
             ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) {
@@ -287,9 +335,40 @@ final class AntelopeStateReader {
             let n = buf.withUnsafeMutableBytes { ptr in
                 recv(fd, ptr.baseAddress!.advanced(by: got), count - got, 0)
             }
+            if n < 0, errno == EINTR { continue }
             if n <= 0 { return false }
             got += n
         }
         return true
+    }
+
+    private func sendAll(fd: Int32, bytes: UnsafeRawBufferPointer) -> Bool {
+        guard let baseAddress = bytes.baseAddress else { return bytes.isEmpty }
+        var sent = 0
+        while sent < bytes.count {
+            let count = send(fd, baseAddress.advanced(by: sent), bytes.count - sent, 0)
+            if count < 0, errno == EINTR { continue }
+            if count <= 0 { return false }
+            sent += count
+        }
+        return true
+    }
+
+    private func shouldForceReconnect() -> Bool {
+        stateLock.withCriticalSection { forceReconnect }
+    }
+
+    private func markDisconnected() {
+        DispatchQueue.main.async { [weak deviceState] in
+            deviceState?.markDisconnected()
+        }
+    }
+}
+
+extension NSLock {
+    func withCriticalSection<T>(_ body: () throws -> T) rethrows -> T {
+        lock()
+        defer { unlock() }
+        return try body()
     }
 }

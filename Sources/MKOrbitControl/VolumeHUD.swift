@@ -55,6 +55,10 @@ final class VolumeHUD {
 
     private func hide() {
         guard let win = window else { return }
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            win.orderOut(nil)
+            return
+        }
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = 0.3
             win.animator().alphaValue = 0
@@ -73,14 +77,11 @@ private struct HUDView: View {
     let channel: String
 
     private var level: Double {
-        if volume >= 96 { return 0 }
-        return Double(96 - volume) / 96.0
+        VolumeScale.rawToSlider(volume) / Double(VolumeScale.maximumRaw)
     }
 
     private var dbText: String {
-        if volume >= 96 { return "-∞" }
-        if volume <= 0 { return "0" }
-        return "-\(volume)"
+        VolumeScale.rawToDisplay(volume)
     }
 
     var body: some View {

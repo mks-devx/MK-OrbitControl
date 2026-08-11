@@ -105,8 +105,11 @@ class MIDIManager: ObservableObject {
         var packet = eventList.packet
 
         for _ in 0..<eventList.numPackets {
-            let words = Mirror(reflecting: packet.words).children.map { $0.value as! UInt32 }
-            if let word = words.first, word != 0 {
+            let firstWord: UInt32? = withUnsafeBytes(of: packet.words) { rawBuffer in
+                guard packet.wordCount > 0 else { return nil }
+                return rawBuffer.bindMemory(to: UInt32.self).first
+            }
+            if let word = firstWord, word != 0, (word >> 28) == 0x2 {
                 let status = (word >> 16) & 0xF0
                 let channel = Int((word >> 16) & 0x0F)
                 let data1 = Int((word >> 8) & 0x7F)
@@ -145,7 +148,7 @@ class MIDIManager: ObservableObject {
         let ch = mapping.action.outputChannel
         if mapping.action.isVolume {
             // Map MIDI 0-127 to volume 96-0 (0=loudest, 96=silence)
-            let vol = 96 - Int(Double(value) / 127.0 * 96.0)
+            let vol = VolumeScale.midiToRaw(value)
             commander.setVolume(channel: ch, value: vol)
             DispatchQueue.main.async {
                 self.deviceState.channels[ch]?.volume = vol

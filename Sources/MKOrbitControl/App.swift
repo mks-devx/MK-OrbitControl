@@ -19,13 +19,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotkeyManager: HotkeyManager?
     private var hotkeyManagerObservable: HotkeyManagerObservable?
     private var settingsWindow: NSWindow?
+    private var settingsCloseObserver: NSObjectProtocol?
+    private var workspaceObservers: [NSObjectProtocol] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.setActivationPolicy(.accessory)
 
+        commander.onStatusChange = { [weak deviceState] status in
+            deviceState?.updateControlAvailability(status)
+        }
+
         setupStatusItem()
         setupPopover()
         setupEventMonitor()
+        setupConnectionRecovery()
 
         let reader = AntelopeStateReader(deviceState: deviceState)
         stateReader = reader
@@ -39,8 +46,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         miniModeObserver = deviceState.$miniMode.sink { [weak self] mini in
             DispatchQueue.main.async {
                 self?.popover?.contentSize = mini
-                    ? NSSize(width: 220, height: 90)
-                    : NSSize(width: 280, height: 480)
+                    ? OrbitControlLayout.miniSize
+                    : OrbitControlLayout.fullSize
             }
         }
 
@@ -85,7 +92,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupPopover() {
         let popover = NSPopover()
-        popover.contentSize = NSSize(width: 280, height: 480)
+        popover.contentSize = OrbitControlLayout.fullSize
         popover.behavior = .transient
         popover.animates = true
 
@@ -115,6 +122,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self, let popover = self.popover, popover.isShown else { return }
             popover.performClose(nil)
         }
+    }
+
+    private func setupConnectionRecovery() {
+        let center = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification] {
+            let observer = center.addObserver(
+                forName: name,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.recoverConnections()
+            }
+            workspaceObservers.append(observer)
+        }
+    }
+
+    private func recoverConnections() {
+        stateReader?.reconnect()
+        commander.restartDaemon()
     }
 
     // MARK: - Toggle Popover
@@ -152,11 +178,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let win = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 600, height: 450),
-            styleMask: [.titled, .closable, .miniaturizable],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
         win.title = "MK-OrbitControl Settings"
+        win.minSize = NSSize(width: 560, height: 420)
         win.contentView = hostingView
         win.isReleasedWhenClosed = false
         win.center()
@@ -164,13 +191,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApplication.shared.activate(ignoringOtherApps: true)
 
         // When Settings closes, go back to accessory mode (no dock icon)
-        NotificationCenter.default.addObserver(
+        if let observer = settingsCloseObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        settingsCloseObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification,
             object: win,
             queue: .main
         ) { [weak self] _ in
             NSApplication.shared.setActivationPolicy(.accessory)
             self?.settingsWindow = nil
+            if let observer = self?.settingsCloseObserver {
+                NotificationCenter.default.removeObserver(observer)
+                self?.settingsCloseObserver = nil
+            }
         }
 
         settingsWindow = win
@@ -183,6 +217,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         commander.stopDaemon()
         hotkeyManager?.unregisterAll()
         if let monitor = eventMonitor { NSEvent.removeMonitor(monitor) }
+        if let observer = settingsCloseObserver { NotificationCenter.default.removeObserver(observer) }
+        let workspaceCenter = NSWorkspace.shared.notificationCenter
+        workspaceObservers.forEach { workspaceCenter.removeObserver($0) }
+        workspaceObservers.removeAll()
     }
 }
 

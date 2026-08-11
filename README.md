@@ -42,7 +42,7 @@ Control volume, mute, dim, mono, and output selection directly from your macOS m
 
 ### Output Management
 - **A/B monitor switching** — toggle between two monitor outputs
-- **4 preset slots** — right-click to save, click to recall complete output states
+- **4 preset slots** — right-click to save, click to recall the selected output's saved state
 - **Night mode** — configurable volume cap for late-night sessions
 
 ### Metering
@@ -59,7 +59,7 @@ Control volume, mute, dim, mono, and output selection directly from your macOS m
 
 ### Customization
 - **12 themes** — Crimson, Midnight, Cyber, Diablo, Nova, Aether, Flux, and more
-- **8 fonts** — System, Hack, Fira Code, JetBrains Mono, Dot Matrix, and more
+- **Font choices** — built-in macOS fonts plus compatible optional fonts already installed on the Mac
 - **9 menu bar icons** — choose the icon that fits your menu bar style
 - **Settings panel** — tabbed sidebar with dark theme
 
@@ -67,7 +67,7 @@ Control volume, mute, dim, mono, and output selection directly from your macOS m
 - **Global hotkeys** — configurable per output, works from any app (Carbon-based via HotKey library)
 - **MIDI learn** — map any MIDI CC to volume or mute (CoreMIDI)
 - **Volume HUD** — on-screen overlay when adjusting volume via hotkeys
-- **Auto update checker** — notifies when new versions are available on GitHub
+- **Auto update checker** — notifies when a downloadable GitHub Release is available
 
 ### Reliability
 - **Auto-reconnect** — if the connection to the Antelope server drops after extended uptime, the bridge automatically recovers without manual restart
@@ -81,6 +81,7 @@ Control volume, mute, dim, mono, and output selection directly from your macOS m
 ### Requirements
 
 - **macOS 13+** (Ventura, Sonoma, Sequoia)
+- **Apple Silicon Mac**; Intel packaging is not currently supported or validated
 - **Antelope Launcher** installed and running ([download](https://www.antelopeaudio.com/downloads/))
 - **Synergy Core device** connected via Thunderbolt
 
@@ -88,12 +89,12 @@ Control volume, mute, dim, mono, and output selection directly from your macOS m
 
 | Device | Status | Notes |
 |--------|--------|-------|
-| Orion Studio III (Synergy Core) | Tested | Full functionality verified |
+| Orion Studio III (Synergy Core) | Regression test required | Previously tested; the hardened command path still needs a controlled hardware pass |
 | Discrete 4 / 8 | Community testing | Shows offline — debug data needed |
-| Galaxy 32 / 64 | Untested | Should work — [report results](../../issues) |
-| Orion 32+ Gen4 | Untested | Should work — [report results](../../issues) |
-| Zen Tour Synergy Core | Untested | Should work — [report results](../../issues) |
-| Goliath | Untested | Should work — [report results](../../issues) |
+| Galaxy 32 / 64 | Unverified | Channel mapping and report format must be validated |
+| Orion 32+ Gen4 | Unverified | Channel mapping and report format must be validated |
+| Zen Tour Synergy Core | Unverified | Channel mapping and report format must be validated |
+| Goliath | Unverified | Channel mapping and report format must be validated |
 
 Have a Synergy Core device not listed here? [Test and report your results](../../issues) — community testing welcome.
 
@@ -111,11 +112,11 @@ Download the latest DMG from the [Releases page](../../releases/latest).
 2. Drag **MK-OrbitControl.app** into your **Applications** folder
 3. Eject the DMG when done (right-click → Eject in Finder)
 
-### Step 3: Run the Setup Script
+### Step 3: Complete First-Run Setup
 
-The setup script extracts necessary modules from your local Antelope installation. No proprietary code is downloaded — everything comes from software already on your Mac.
+Open MK-OrbitControl and click **Run Setup** if the setup notice appears. It extracts the required modules from the Antelope software already installed on your Mac. No proprietary code is downloaded or included in the app.
 
-Open **Terminal** (Applications → Utilities → Terminal) and run:
+If in-app setup cannot run, keep the DMG mounted and use this Terminal fallback:
 
 ```bash
 bash "/Volumes/MK-OrbitControl v1.4/setup.sh"
@@ -125,11 +126,11 @@ You should see `Extracted X modules` followed by `Done!`.
 
 > **Note:** If Terminal says the volume is not found, re-mount the DMG by double-clicking it again.
 
-### Step 4: Launch
+### Step 4: Control Your Outputs
 
 Open **MK-OrbitControl** from your Applications folder. A speaker icon will appear in your menu bar (top right of the screen). Click it to open the controller.
 
-> **First launch on macOS 13+:** You may need to right-click the app → Open → Open to bypass Gatekeeper. See [Troubleshooting](#troubleshooting) for details.
+> Ad-hoc local builds may require right-click → Open. Public distribution should use a Developer ID-signed and notarized DMG.
 
 ---
 
@@ -245,7 +246,7 @@ MK-OrbitControl communicates with the Antelope Audio server running locally on y
 | Component | Technology |
 |-----------|------------|
 | App | Swift 6 / SwiftUI — menu bar popover, floating window, settings |
-| Bridge | Python 3.8 — TCP daemon on port 17580, translates JSON commands |
+| Bridge | Python 3.8 compatibility daemon on localhost port 17580; commands require a per-install authentication token |
 | Hotkeys | HotKey (Swift package) — Carbon-based global keyboard shortcuts |
 | MIDI | CoreMIDI — native macOS MIDI framework |
 | Protocol | TCP with 4-byte big-endian length prefix + JSON payload |
@@ -273,10 +274,12 @@ Volume mapping: 0 = 0 dB (loudest), 95 = -95 dB, 96 = -∞ (auto-mutes).
 
 ### Safety
 
-- Uses Antelope's own RemoteDevice API — **cannot brick or damage hardware**
-- Only sends volume, mute, dim, and mono commands
-- The Antelope server validates all commands before forwarding to hardware
+- Restricts commands to volume (0–96), mute, dim, and mono on known output channels
+- Keeps the command bridge bound to localhost and requires a per-install 64-character authentication token stored with owner-only permissions
+- Starts from silence until the first valid device state is received
 - No proprietary code is distributed — modules are extracted from the user's own installation
+
+> Python 3.8.20 is currently required because the Antelope modules are Python 3.8 bytecode. Python 3.8 is end-of-life, so replacing this compatibility layer is a release-hardening priority.
 
 ---
 
@@ -296,10 +299,10 @@ pyenv install 3.8.20
 ~/.pyenv/versions/3.8.20/bin/python3.8 -m pip install zeroconf netifaces
 
 # Run setup to extract Antelope modules
-bash dist-bundled/setup.sh
+bash setup.sh
 
 # Run the app
-.build/release/MKAntelopeControl
+.build/release/MKOrbitControl
 ```
 
 ### Build DMG for Distribution
@@ -309,7 +312,7 @@ bash build-dist.sh
 # Output: ~/Desktop/MK-OrbitControl-v{version}.dmg
 ```
 
-The build script automatically detects the version from the latest git tag, builds a universal binary (arm64 + x86_64), code signs the app, bundles Python 3.8, and creates a DMG.
+The build script detects the version from the latest git tag, builds an arm64 app, creates a relocatable Python 3.8 runtime, signs nested code and the app, verifies the signature, and creates a DMG. Set `SIGN_IDENTITY` to a Developer ID Application identity and `NOTARY_PROFILE` to a `notarytool` keychain profile to produce and validate a notarized DMG. Without both, the result is explicitly a local ad-hoc-signed package.
 
 ---
 
@@ -319,8 +322,8 @@ The build script automatically detects the version from the latest git tag, buil
 # Remove the app
 rm -rf /Applications/MK-OrbitControl.app
 
-# (Optional) Remove extracted modules
-rm -rf ~/Developer/MK-AntelopeControl
+# (Optional) Remove extracted compatibility modules and bridge
+rm -rf "$HOME/Library/Application Support/MK-OrbitControl"
 ```
 
 No other files are created. No launch agents, no system modifications.
@@ -373,18 +376,10 @@ Contributions welcome:
 
 Not affiliated with, endorsed by, or associated with Antelope Audio. All trademarks belong to their respective owners.
 
-This software uses the same command protocol as the official Control Panel. It cannot modify firmware or cause hardware damage.
+This software uses the same command protocol as the official Control Panel and limits its bridge to monitor-control commands. Use conservative levels when testing an unverified device mapping.
 
 ---
 
 ## License
 
 [MIT](LICENSE)
-
----
-
-<p align="center">
-  If this saved you a few clicks, consider buying me a coffee
-  <br>
-  <a href="https://buymeacoffee.com/mk_tools">buymeacoffee.com/mk_tools</a>
-</p>
