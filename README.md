@@ -66,6 +66,7 @@ Control volume, mute, dim, mono, and output selection directly from your macOS m
 ### Integration
 - **Global hotkeys** — configurable per output, works from any app (Carbon-based via HotKey library)
 - **MIDI learn** — map any MIDI CC to volume or mute (CoreMIDI)
+- **Interactive macOS widget** — compact volume, mute, dim, and output controls on the desktop or in Notification Center
 - **Volume HUD** — on-screen overlay when adjusting volume via hotkeys
 - **Auto update checker** — notifies when a downloadable GitHub Release is available
 
@@ -80,7 +81,7 @@ Control volume, mute, dim, mono, and output selection directly from your macOS m
 
 ### Requirements
 
-- **macOS 13+** (Ventura, Sonoma, Sequoia)
+- **macOS 13+** for the menu-bar app; the interactive widget requires **macOS 14+**
 - **Apple Silicon Mac**; Intel packaging is not currently supported or validated
 - **Antelope Launcher** installed and running ([download](https://www.antelopeaudio.com/downloads/))
 - **Synergy Core device** connected via Thunderbolt
@@ -163,6 +164,14 @@ Open **MK-OrbitControl** from your Applications folder. A speaker icon will appe
 - **Mini mode** — click the minimize icon in the popover header
 - **Floating window** — click the window icon in the popover header; drag to position anywhere
 - **Return to popover** — close the floating window or click the menu bar icon
+
+### Desktop Widget (macOS 14+)
+
+1. Open MK-OrbitControl once so it can connect and share the current output state.
+2. Control-click the macOS desktop and choose **Edit Widgets**.
+3. Search for **MK-OrbitControl**, then add the small or medium widget.
+
+The small widget prioritises volume and mute. The medium widget also includes DIM and direct MON A, MON B, HP 1, and HP 2 selection. Widget commands use the same authenticated localhost bridge as the menu-bar app; no cloud service or remote network connection is involved.
 
 ---
 
@@ -290,8 +299,14 @@ Volume mapping: 0 = 0 dB (loudest), 95 = -95 dB, 96 = -∞ (auto-mutes).
 git clone https://github.com/mks-devx/MK-OrbitControl.git
 cd MK-OrbitControl
 
-# Build the Swift app
-swift build -c release
+# Install the project generator used by the app + widget build
+brew install xcodegen
+
+# Generate the Xcode project and build the app with its WidgetKit extension
+xcodegen generate --spec project.yml
+xcodebuild -project MKOrbitControl.xcodeproj -scheme MKOrbitControl \
+  -configuration Release -derivedDataPath /tmp/MKOrbitControl-Release \
+  -destination 'platform=macOS,arch=arm64' CODE_SIGNING_ALLOWED=NO build
 
 # Install Python 3.8 for the bridge daemon (one time)
 brew install pyenv
@@ -301,8 +316,8 @@ pyenv install 3.8.20
 # Run setup to extract Antelope modules
 bash setup.sh
 
-# Run the app
-.build/release/MKOrbitControl
+# Run the unsigned development build
+open /tmp/MKOrbitControl-Release/Build/Products/Release/MK-OrbitControl.app
 ```
 
 ### Build DMG for Distribution
@@ -312,7 +327,7 @@ bash build-dist.sh
 # Output: ~/Desktop/MK-OrbitControl-v{version}.dmg
 ```
 
-The build script detects the version from the latest git tag, builds an arm64 app, creates a relocatable Python 3.8 runtime, signs nested code and the app, verifies the signature, and creates a DMG. Set `SIGN_IDENTITY` to a Developer ID Application identity and `NOTARY_PROFILE` to a `notarytool` keychain profile to produce and validate a notarized DMG. Without both, the result is explicitly a local ad-hoc-signed package.
+The build script detects the version from the latest git tag, generates the Xcode project, embeds the WidgetKit extension, builds an arm64 app, creates a relocatable Python 3.8 runtime, signs nested code and the app, verifies the signature, and creates a DMG. Set `SIGN_IDENTITY` to a Developer ID Application identity and `NOTARY_PROFILE` to a `notarytool` keychain profile to produce and validate a notarized DMG. Without both, the result is explicitly a local ad-hoc-signed package. App Groups must also be enabled for the app and widget identifiers in the selected Apple Developer team before distribution signing.
 
 ---
 
@@ -326,7 +341,7 @@ rm -rf /Applications/MK-OrbitControl.app
 rm -rf "$HOME/Library/Application Support/MK-OrbitControl"
 ```
 
-No other files are created. No launch agents, no system modifications.
+No launch agents or system services are installed. macOS may retain the widget's App Group preferences container after the app is removed.
 
 ---
 

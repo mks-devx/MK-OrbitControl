@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotkeyManagerObservable: HotkeyManagerObservable?
     private var settingsWindow: NSWindow?
     private var settingsCloseObserver: NSObjectProtocol?
+    private var widgetOutputObserver: NSObjectProtocol?
     private var workspaceObservers: [NSObjectProtocol] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -28,11 +29,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         commander.onStatusChange = { [weak deviceState] status in
             deviceState?.updateControlAvailability(status)
         }
+        commander.prepareWidgetAccess()
+        deviceState.syncWidgetState()
 
         setupStatusItem()
         setupPopover()
         setupEventMonitor()
         setupConnectionRecovery()
+        setupWidgetActions()
 
         let reader = AntelopeStateReader(deviceState: deviceState)
         stateReader = reader
@@ -143,6 +147,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         commander.restartDaemon()
     }
 
+    private func setupWidgetActions() {
+        widgetOutputObserver = NotificationCenter.default.addObserver(
+            forName: .orbitWidgetSelectOutput,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            self?.applyPendingWidgetOutput(fallback: notification.userInfo?["rawValue"] as? Int)
+        }
+        applyPendingWidgetOutput()
+    }
+
+    private func applyPendingWidgetOutput(fallback: Int? = nil) {
+        guard let rawValue = OrbitWidgetStateStore.consumeRequestedOutput() ?? fallback,
+              let output = OutputChannel(rawValue: rawValue) else { return }
+        deviceState.selectedOutput = output
+    }
+
     // MARK: - Toggle Popover
 
     @objc private func togglePopover() {
@@ -218,6 +239,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeyManager?.unregisterAll()
         if let monitor = eventMonitor { NSEvent.removeMonitor(monitor) }
         if let observer = settingsCloseObserver { NotificationCenter.default.removeObserver(observer) }
+        if let observer = widgetOutputObserver { NotificationCenter.default.removeObserver(observer) }
         let workspaceCenter = NSWorkspace.shared.notificationCenter
         workspaceObservers.forEach { workspaceCenter.removeObserver($0) }
         workspaceObservers.removeAll()

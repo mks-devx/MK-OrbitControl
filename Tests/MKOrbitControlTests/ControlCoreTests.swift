@@ -102,4 +102,45 @@ final class ControlCoreTests: XCTestCase {
         state.applySnapshot(channelUpdates: [.monA: changed], peakLevels: [])
         XCTAssertEqual(channelPublicationCount, 2)
     }
+
+    func testWidgetSnapshotUsesSafeAudioLabelsAndDisplayScale() {
+        var snapshot = OrbitWidgetSnapshot(
+            outputRawValue: OutputChannel.monA.rawValue,
+            volume: 44,
+            muted: false,
+            dimmed: false,
+            connected: true,
+            updatedAt: Date(),
+            lastCommandFailed: false
+        )
+
+        XCTAssertEqual(snapshot.outputLabel, "MON A")
+        XCTAssertEqual(snapshot.displayVolume, "−44")
+
+        snapshot.outputRawValue = OutputChannel.hp2.rawValue
+        snapshot.volume = 96
+        XCTAssertEqual(snapshot.outputLabel, "HP 2")
+        XCTAssertEqual(snapshot.displayVolume, "−∞")
+
+        snapshot.volume = -20
+        XCTAssertEqual(snapshot.displayVolume, "0")
+    }
+
+    func testWidgetVisualComparisonIgnoresHeartbeatOnly() {
+        let original = OrbitWidgetSnapshot(
+            outputRawValue: 0,
+            volume: 40,
+            muted: false,
+            dimmed: false,
+            connected: true,
+            updatedAt: Date(timeIntervalSince1970: 1),
+            lastCommandFailed: false
+        )
+        var heartbeat = original
+        heartbeat.updatedAt = Date(timeIntervalSince1970: 2)
+        XCTAssertTrue(original.visuallyMatches(heartbeat))
+
+        heartbeat.muted = true
+        XCTAssertFalse(original.visuallyMatches(heartbeat))
+    }
 }

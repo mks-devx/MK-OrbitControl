@@ -224,10 +224,16 @@ class DeviceState: ObservableObject {
         return dict
     }()
     private(set) var lastDataReceived: Date = .distantPast
+    private var lastWidgetHeartbeat: Date = .distantPast
     @Published var peaks = PeakData()
     @Published private(set) var connected: Bool = false
     @Published private(set) var controlAvailability: ControlAvailability = .starting
-    @Published var selectedOutput: OutputChannel = .monA
+    @Published var selectedOutput: OutputChannel = .monA {
+        didSet {
+            guard selectedOutput != oldValue else { return }
+            publishWidgetState(reload: true)
+        }
+    }
     @Published var nightMode: Bool = false
     @Published var nightModeMax: Int = 40  // raw 40 = -40 dB max
     @Published var miniMode: Bool = false
@@ -240,15 +246,22 @@ class DeviceState: ObservableObject {
         // Reset connection state immediately for UI feedback
         lastDataReceived = .distantPast
         connected = false
+        publishWidgetState(reload: true)
     }
 
     func markDataReceived(at date: Date = Date()) {
+        let connectionChanged = !connected
         lastDataReceived = date
         if !connected { connected = true }
+        if connectionChanged || date.timeIntervalSince(lastWidgetHeartbeat) >= 30 {
+            publishWidgetState(reload: connectionChanged)
+        }
     }
 
     func markDisconnected() {
-        if connected { connected = false }
+        guard connected else { return }
+        connected = false
+        publishWidgetState(reload: true)
     }
 
     func applySnapshot(
@@ -276,10 +289,17 @@ class DeviceState: ObservableObject {
         }
 
         markDataReceived(at: date)
+        if channelsChanged {
+            publishWidgetState(reload: true)
+        }
     }
 
     func updateControlAvailability(_ availability: ControlAvailability) {
+        let widgetStatusChanged = controlAvailability == .commandFailed || availability == .commandFailed
         controlAvailability = availability
+        if widgetStatusChanged {
+            publishWidgetState(reload: true)
+        }
     }
 
     @Published var isRestartingServer: Bool = false
@@ -308,5 +328,25 @@ class DeviceState: ObservableObject {
 
     var currentChannel: ChannelState {
         get { channels[selectedOutput] ?? ChannelState() }
+    }
+
+    func syncWidgetState() {
+        publishWidgetState(reload: true)
+    }
+
+    private func publishWidgetState(reload: Bool) {
+        lastWidgetHeartbeat = Date()
+        OrbitWidgetStateStore.save(
+            OrbitWidgetSnapshot(
+                outputRawValue: selectedOutput.rawValue,
+                volume: currentChannel.volume,
+                muted: currentChannel.mute,
+                dimmed: currentChannel.dim,
+                connected: connected,
+                updatedAt: lastWidgetHeartbeat,
+                lastCommandFailed: controlAvailability == .commandFailed
+            ),
+            reload: reload
+        )
     }
 }

@@ -44,6 +44,10 @@ final class AntelopeCommander {
         self.pythonEnvironment = environment
     }
 
+    func prepareWidgetAccess() {
+        OrbitWidgetStateStore.saveAuthToken(authToken)
+    }
+
     @discardableResult
     func startDaemon() -> Bool {
         processLock.lock()

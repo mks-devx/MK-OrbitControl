@@ -1,0 +1,108 @@
+name: MKOrbitControl
+
+options:
+  createIntermediateGroups: true
+  deploymentTarget:
+    macOS: "13.0"
+
+packages:
+  HotKey:
+    url: https://github.com/soffes/HotKey
+    from: 0.2.1
+
+settings:
+  base:
+    ARCHS: arm64
+    SWIFT_VERSION: 5.0
+    DEVELOPMENT_TEAM: B6G5GQFBJ5
+
+targets:
+  MKOrbitControl:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: Sources/MKOrbitControl
+        excludes:
+          - "*.icns"
+      - path: Sources/MKOrbitControlWidget/OrbitWidgetIntents.swift
+    resources:
+      - path: Sources/MKOrbitControl/AppIcon.icns
+    info:
+      path: Config/App-Info.plist
+      properties:
+        CFBundleDisplayName: MK-OrbitControl
+        CFBundleIconFile: AppIcon
+        LSUIElement: true
+        NSHighResolutionCapable: true
+    entitlements:
+      path: Config/App.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.mkdevices.orbitcontrol
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mkdevices.orbitcontrol
+        PRODUCT_NAME: MK-OrbitControl
+        PRODUCT_MODULE_NAME: MKOrbitControl
+        EXECUTABLE_NAME: MK-OrbitControl
+        MARKETING_VERSION: "1.4"
+        CURRENT_PROJECT_VERSION: "1.4"
+        CODE_SIGN_ENTITLEMENTS: Config/App.entitlements
+    dependencies:
+      - package: HotKey
+      - target: MKOrbitControlWidget
+        embed: true
+
+  MKOrbitControlWidget:
+    type: app-extension
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources/MKOrbitControlWidget
+      - path: Sources/MKOrbitControl/WidgetSharedState.swift
+    info:
+      path: Config/Widget-Info.plist
+      properties:
+        CFBundleDisplayName: MK-OrbitControl Widget
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Config/Widget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.application-groups:
+          - group.com.mkdevices.orbitcontrol
+        com.apple.security.network.client: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mkdevices.orbitcontrol.widget
+        PRODUCT_NAME: MKOrbitControlWidget
+        CODE_SIGN_ENTITLEMENTS: Config/Widget.entitlements
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+
+  MKOrbitControlTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: Tests/MKOrbitControlTests
+    dependencies:
+      - target: MKOrbitControl
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mkdevices.orbitcontrol.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/MK-OrbitControl.app/Contents/MacOS/MK-OrbitControl"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+schemes:
+  MKOrbitControl:
+    build:
+      targets:
+        MKOrbitControl: all
+        MKOrbitControlTests: [test]
+    test:
+      targets:
+        - MKOrbitControlTests

@@ -8,12 +8,15 @@ DIST="${DIST_ROOT:-$PROJECT/dist-bundled}"
 APP="$DIST/MK-OrbitControl.app"
 PY38="${PY38_ROOT:-$HOME/.pyenv/versions/3.8.20}"
 GETTEXT_LIB="${GETTEXT_LIB:-/opt/homebrew/opt/gettext/lib/libintl.8.dylib}"
+DERIVED_DATA="${DERIVED_DATA_ROOT:-/tmp/MKOrbitControl-Release-DerivedData}"
+SOURCE_PACKAGES="${SOURCE_PACKAGES_ROOT:-/tmp/MKOrbitControl-Packages}"
 
 # Get version from git tag (e.g., v1.2 → 1.2), fallback to 1.2
 VERSION=$(cd "$PROJECT" && git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "1.4")
 if [ -z "$VERSION" ] || [ "$VERSION" = "v" ]; then VERSION="1.4"; fi
 DMG_FILE="${DMG_OUTPUT:-$HOME/Desktop/MK-OrbitControl-v${VERSION}.dmg}"
 
+# Use a certificate SHA-1 fingerprint when multiple identities share a name.
 # Use SIGN_IDENTITY="Developer ID Application: ..." for distributable builds.
 # The default remains ad-hoc so local verification does not require credentials.
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
@@ -32,56 +35,53 @@ if [ ! -f "$GETTEXT_LIB" ]; then
   echo "Set GETTEXT_LIB to libintl.8.dylib."
   exit 1
 fi
+if ! command -v xcodegen >/dev/null 2>&1; then
+  echo "ERROR: XcodeGen is required to build the app and WidgetKit extension."
+  echo "Install it with: brew install xcodegen"
+  exit 1
+fi
 case "$DIST" in
   "$PROJECT"/dist-*|/tmp/*) ;;
   *) echo "ERROR: Refusing unsafe distribution path: $DIST"; exit 1 ;;
 esac
 
-# Build Swift for Apple Silicon. The bundled Python runtime is arm64-only.
+# Build the app and embedded WidgetKit extension for Apple Silicon. The bundled
+# Python runtime is arm64-only.
 cd "$PROJECT"
 echo "Building arm64..."
-swift build -c release --arch arm64
+xcodegen generate --spec "$PROJECT/project.yml"
+if ! xcodebuild \
+  -project "$PROJECT/MKOrbitControl.xcodeproj" \
+  -scheme MKOrbitControl \
+  -configuration Release \
+  -derivedDataPath "$DERIVED_DATA" \
+  -clonedSourcePackagesDirPath "$SOURCE_PACKAGES" \
+  -destination 'platform=macOS,arch=arm64' \
+  MARKETING_VERSION="$VERSION" \
+  CURRENT_PROJECT_VERSION="$VERSION" \
+  CODE_SIGNING_ALLOWED=NO \
+  build; then
+  echo "ERROR: Xcode app + widget build failed."
+  exit 1
+fi
+
+BUILT_APP="$DERIVED_DATA/Build/Products/Release/MK-OrbitControl.app"
+if [ ! -d "$BUILT_APP" ]; then
+  echo "ERROR: Xcode build failed. App not found at $BUILT_APP"
+  exit 1
+fi
 
 # Create fresh .app
 rm -rf "$DIST"
-mkdir -p "$APP/Contents/MacOS"
+ditto "$BUILT_APP" "$APP"
 PYTHON_ROOT="$APP/Contents/Resources/python"
 PYTHON_STDLIB="$PYTHON_ROOT/lib/python3.8"
 mkdir -p "$PYTHON_STDLIB/site-packages"
-
-# Copy binary (prefer arm64, fallback to existing)
-BINARY="$(swift build -c release --arch arm64 --show-bin-path)/MKOrbitControl"
-if [ ! -f "$BINARY" ]; then
-  echo "ERROR: Swift build failed. Binary not found at $BINARY"
-  exit 1
-fi
-cp "$BINARY" "$APP/Contents/MacOS/MK-OrbitControl"
 
 # Copy bridge + icon
 cp "$PROJECT/bridge.py" "$APP/Contents/Resources/"
 cp "$PROJECT/setup.sh" "$APP/Contents/Resources/"
 chmod +x "$APP/Contents/Resources/setup.sh"
-cp "$PROJECT/Sources/MKOrbitControl/AppIcon.icns" "$APP/Contents/Resources/"
-
-# Info.plist with dynamic version
-cat > "$APP/Contents/Info.plist" << PLIST
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleName</key><string>MK-OrbitControl</string>
-    <key>CFBundleDisplayName</key><string>MK-OrbitControl</string>
-    <key>CFBundleIdentifier</key><string>com.mkdevices.orbitcontrol</string>
-    <key>CFBundleVersion</key><string>${VERSION}</string>
-    <key>CFBundleShortVersionString</key><string>${VERSION}</string>
-    <key>CFBundleExecutable</key><string>MK-OrbitControl</string>
-    <key>CFBundleIconFile</key><string>AppIcon.icns</string>
-    <key>LSMinimumSystemVersion</key><string>13.0</string>
-    <key>LSUIElement</key><true/>
-    <key>NSHighResolutionCapable</key><true/>
-</dict>
-</plist>
-PLIST
 
 # Bundle a relocatable Python 3.8 runtime. Copying a random subset of the
 # standard library produced installations that failed before bridge.py ran.
@@ -165,11 +165,32 @@ SIGN_OPTIONS=(--force --sign "$SIGN_IDENTITY")
 if [ "$SIGN_IDENTITY" != "-" ]; then
   SIGN_OPTIONS+=(--timestamp --options runtime)
 fi
-find "$PYTHON_ROOT" -type f \( -name '*.dylib' -o -name '*.so' \) -exec \
-  codesign "${SIGN_OPTIONS[@]}" {} \;
-codesign "${SIGN_OPTIONS[@]}" "$PYTHON_ROOT/python3.8"
-codesign "${SIGN_OPTIONS[@]}" "$APP/Contents/MacOS/MK-OrbitControl"
-codesign "${SIGN_OPTIONS[@]}" "$APP"
+while IFS= read -r -d '' binary; do
+  if ! codesign "${SIGN_OPTIONS[@]}" "$binary"; then
+    echo "ERROR: Failed to sign nested runtime code: $binary"
+    exit 1
+  fi
+done < <(find "$PYTHON_ROOT" -type f \( -name '*.dylib' -o -name '*.so' \) -print0)
+if ! codesign "${SIGN_OPTIONS[@]}" "$PYTHON_ROOT/python3.8"; then
+  echo "ERROR: Failed to sign the embedded Python runtime."
+  exit 1
+fi
+if ! codesign "${SIGN_OPTIONS[@]}" \
+  --entitlements "$PROJECT/Config/Widget.entitlements" \
+  "$APP/Contents/PlugIns/MKOrbitControlWidget.appex"; then
+  echo "ERROR: Failed to sign the WidgetKit extension."
+  exit 1
+fi
+if ! codesign "${SIGN_OPTIONS[@]}" "$APP/Contents/MacOS/MK-OrbitControl"; then
+  echo "ERROR: Failed to sign the app executable."
+  exit 1
+fi
+if ! codesign "${SIGN_OPTIONS[@]}" \
+  --entitlements "$PROJECT/Config/App.entitlements" \
+  "$APP"; then
+  echo "ERROR: Failed to sign the app bundle."
+  exit 1
+fi
 
 # Verify signature
 if ! codesign --verify --deep --strict --verbose=2 "$APP"; then
@@ -188,11 +209,17 @@ cp "$PROJECT/README.md" "$DIST/README.md" 2>/dev/null || echo "# MK-OrbitControl
 echo ""
 echo "Creating DMG..."
 rm -f "$DMG_FILE"
-hdiutil create -volname "MK-OrbitControl v${VERSION}" -srcfolder "$DIST" -ov -format UDZO "$DMG_FILE" 2>&1 | tail -2
+if ! hdiutil create -volname "MK-OrbitControl v${VERSION}" -srcfolder "$DIST" -ov -format UDZO "$DMG_FILE"; then
+  echo "ERROR: DMG creation failed."
+  exit 1
+fi
 
 # Code sign the DMG
 echo "Signing DMG..."
-codesign "${SIGN_OPTIONS[@]}" "$DMG_FILE" 2>&1 | head -2
+if ! codesign "${SIGN_OPTIONS[@]}" "$DMG_FILE"; then
+  echo "ERROR: DMG signing failed."
+  exit 1
+fi
 
 if [ -n "$NOTARY_PROFILE" ]; then
   if [ "$SIGN_IDENTITY" = "-" ]; then
