@@ -1,0 +1,566 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		054F29D5DBE8BA1567DB4D1D /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 421F1E9BFA61A1F2B5883CB4 /* App.swift */; };
+		1CE79FA93ED4010EED3EBFF5 /* FloatingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 566D3B7764B6D9DCC7655A60 /* FloatingWindow.swift */; };
+		249F39EA4187BF09B504E9F9 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = AD356B6B045B145AA5B56BD5 /* AppIcon.icns */; };
+		2F33C12B99C91D942160F48C /* MIDIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10D98EBFA6B53649807B5D97 /* MIDIManager.swift */; };
+		39D017A358DB7DE322BAE6CA /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBB8A29DA176050C16D8A64D /* UpdateChecker.swift */; };
+		3D87C265739C701ECADDDAC8 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757F3789984C0D45CB12E0E5 /* Models.swift */; };
+		48C983E05A405722FE5E9477 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B833CC7AA1A81D5255BF9888 /* Theme.swift */; };
+		591D0747D46BA4FB40D189D6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E3B28CD969C9FE68DBC3A5 /* SettingsView.swift */; };
+		6B561DEBA2B55FC63D510AB7 /* VisualSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19962E285CFEB1FC9FCA772C /* VisualSmokeTests.swift */; };
+		7CBFDC83CB6D96990AD678D1 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FF16C40E32FA26DF2FD028 /* HotkeyManager.swift */; };
+		8ED8D95B51030079CC15CBF0 /* ControlCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBEABD27738E76A32565C43A /* ControlCoreTests.swift */; };
+		9052249E9B1F71916A09CADB /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1386EC847440CFF0B85E8A9F /* MenuBarView.swift */; };
+		9B2672217B75E852C643B0E8 /* VolumeHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DFB5B002DCCFA46BAB7F643 /* VolumeHUD.swift */; };
+		A700381910C84A654027011B /* AntelopeState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEE4B7413C3B7FB08678CBA7 /* AntelopeState.swift */; };
+		BD60E0FED9914FD8E2182447 /* AntelopeCommander.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABF979AB651FD8D4D61DD7B6 /* AntelopeCommander.swift */; };
+		DDC89D6C59CD04C662694D4F /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 53EAFDF9B849378841D40EBA /* HotKey */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AB0C7A18D297A25DC43AEB4D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 602968EE35DB6D6AC8E1B29A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F5FFBD4B3D434F30DC031DE7;
+			remoteInfo = MKOrbitControl;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		10D98EBFA6B53649807B5D97 /* MIDIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDIManager.swift; sourceTree = "<group>"; };
+		1386EC847440CFF0B85E8A9F /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		19962E285CFEB1FC9FCA772C /* VisualSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualSmokeTests.swift; sourceTree = "<group>"; };
+		2DFB5B002DCCFA46BAB7F643 /* VolumeHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeHUD.swift; sourceTree = "<group>"; };
+		3F0C466C6DF7F56CB56C8631 /* MKOrbitControl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MKOrbitControl.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		421F1E9BFA61A1F2B5883CB4 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		53E3B28CD969C9FE68DBC3A5 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		566D3B7764B6D9DCC7655A60 /* FloatingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindow.swift; sourceTree = "<group>"; };
+		757F3789984C0D45CB12E0E5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		ABF979AB651FD8D4D61DD7B6 /* AntelopeCommander.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AntelopeCommander.swift; sourceTree = "<group>"; };
+		AD356B6B045B145AA5B56BD5 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
+		B833CC7AA1A81D5255BF9888 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		BEE4B7413C3B7FB08678CBA7 /* AntelopeState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AntelopeState.swift; sourceTree = "<group>"; };
+		C5FD5E64ADDD3EE6D55BC0C6 /* MKOrbitControlTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MKOrbitControlTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CBEABD27738E76A32565C43A /* ControlCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlCoreTests.swift; sourceTree = "<group>"; };
+		E4FF16C40E32FA26DF2FD028 /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
+		FBB8A29DA176050C16D8A64D /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8496CD5E98410D4EE31893CC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DDC89D6C59CD04C662694D4F /* HotKey in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		02E34914CB51CCDC19931C31 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				757F3789984C0D45CB12E0E5 /* Models.swift */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		15CF3B5DB31D651CA55B04DE /* MKOrbitControlTests */ = {
+			isa = PBXGroup;
+			children = (
+				CBEABD27738E76A32565C43A /* ControlCoreTests.swift */,
+				19962E285CFEB1FC9FCA772C /* VisualSmokeTests.swift */,
+			);
+			path = MKOrbitControlTests;
+			sourceTree = "<group>";
+		};
+		32B94B47BA8ED569CD0BF849 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				15CF3B5DB31D651CA55B04DE /* MKOrbitControlTests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		5BEA9CFC1F5CA70D0E20A7C8 /* Application */ = {
+			isa = PBXGroup;
+			children = (
+				421F1E9BFA61A1F2B5883CB4 /* App.swift */,
+			);
+			path = Application;
+			sourceTree = "<group>";
+		};
+		600B757DCC2D1323C359D7B1 /* MKOrbitControl */ = {
+			isa = PBXGroup;
+			children = (
+				5BEA9CFC1F5CA70D0E20A7C8 /* Application */,
+				02E34914CB51CCDC19931C31 /* Domain */,
+				BFA8403433D2927921F29914 /* Infrastructure */,
+				CECC85BB06DDE9647BB0DDB9 /* Input */,
+				AD2D452AA1FB21A02DD7E648 /* Services */,
+				C0F29D02ACD84496CE33A073 /* UI */,
+			);
+			path = MKOrbitControl;
+			sourceTree = "<group>";
+		};
+		799D62CD5C39CAC47ED0542E /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				AD356B6B045B145AA5B56BD5 /* AppIcon.icns */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		9CE865A525DE455A7235A0A3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3F0C466C6DF7F56CB56C8631 /* MKOrbitControl.app */,
+				C5FD5E64ADDD3EE6D55BC0C6 /* MKOrbitControlTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AD2D452AA1FB21A02DD7E648 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				FBB8A29DA176050C16D8A64D /* UpdateChecker.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		BFA8403433D2927921F29914 /* Infrastructure */ = {
+			isa = PBXGroup;
+			children = (
+				ABF979AB651FD8D4D61DD7B6 /* AntelopeCommander.swift */,
+				BEE4B7413C3B7FB08678CBA7 /* AntelopeState.swift */,
+			);
+			path = Infrastructure;
+			sourceTree = "<group>";
+		};
+		C0F29D02ACD84496CE33A073 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				566D3B7764B6D9DCC7655A60 /* FloatingWindow.swift */,
+				1386EC847440CFF0B85E8A9F /* MenuBarView.swift */,
+				53E3B28CD969C9FE68DBC3A5 /* SettingsView.swift */,
+				B833CC7AA1A81D5255BF9888 /* Theme.swift */,
+				2DFB5B002DCCFA46BAB7F643 /* VolumeHUD.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		CECC85BB06DDE9647BB0DDB9 /* Input */ = {
+			isa = PBXGroup;
+			children = (
+				E4FF16C40E32FA26DF2FD028 /* HotkeyManager.swift */,
+				10D98EBFA6B53649807B5D97 /* MIDIManager.swift */,
+			);
+			path = Input;
+			sourceTree = "<group>";
+		};
+		E1C5388E8E30D56ACC0E0FD1 = {
+			isa = PBXGroup;
+			children = (
+				799D62CD5C39CAC47ED0542E /* Config */,
+				FD42D587E059872B3025F90B /* Sources */,
+				32B94B47BA8ED569CD0BF849 /* Tests */,
+				9CE865A525DE455A7235A0A3 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		FD42D587E059872B3025F90B /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				600B757DCC2D1323C359D7B1 /* MKOrbitControl */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3660BA266D825CB0F64EB2A5 /* MKOrbitControlTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 575F01BE7B9306A3BCFBDF01 /* Build configuration list for PBXNativeTarget "MKOrbitControlTests" */;
+			buildPhases = (
+				CCE30A812C12C0EA37D8CE98 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				46858484954488473EEAAC48 /* PBXTargetDependency */,
+			);
+			name = MKOrbitControlTests;
+			packageProductDependencies = (
+			);
+			productName = MKOrbitControlTests;
+			productReference = C5FD5E64ADDD3EE6D55BC0C6 /* MKOrbitControlTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		F5FFBD4B3D434F30DC031DE7 /* MKOrbitControl */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AEFF75289A3557319BA58C4E /* Build configuration list for PBXNativeTarget "MKOrbitControl" */;
+			buildPhases = (
+				8C37D46C41F37C5AD7D77C23 /* Sources */,
+				7F283940B9C3B6E1A70F8BCC /* Resources */,
+				8496CD5E98410D4EE31893CC /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MKOrbitControl;
+			packageProductDependencies = (
+				53EAFDF9B849378841D40EBA /* HotKey */,
+			);
+			productName = MKOrbitControl;
+			productReference = 3F0C466C6DF7F56CB56C8631 /* MKOrbitControl.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		602968EE35DB6D6AC8E1B29A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = F201B59F659CEEDA2768642F /* Build configuration list for PBXProject "MKOrbitControl" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = E1C5388E8E30D56ACC0E0FD1;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BBF3F4FFDFD992B42DD8A499 /* XCRemoteSwiftPackageReference "HotKey" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 9CE865A525DE455A7235A0A3 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F5FFBD4B3D434F30DC031DE7 /* MKOrbitControl */,
+				3660BA266D825CB0F64EB2A5 /* MKOrbitControlTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7F283940B9C3B6E1A70F8BCC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				249F39EA4187BF09B504E9F9 /* AppIcon.icns in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8C37D46C41F37C5AD7D77C23 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD60E0FED9914FD8E2182447 /* AntelopeCommander.swift in Sources */,
+				A700381910C84A654027011B /* AntelopeState.swift in Sources */,
+				054F29D5DBE8BA1567DB4D1D /* App.swift in Sources */,
+				1CE79FA93ED4010EED3EBFF5 /* FloatingWindow.swift in Sources */,
+				7CBFDC83CB6D96990AD678D1 /* HotkeyManager.swift in Sources */,
+				2F33C12B99C91D942160F48C /* MIDIManager.swift in Sources */,
+				9052249E9B1F71916A09CADB /* MenuBarView.swift in Sources */,
+				3D87C265739C701ECADDDAC8 /* Models.swift in Sources */,
+				591D0747D46BA4FB40D189D6 /* SettingsView.swift in Sources */,
+				48C983E05A405722FE5E9477 /* Theme.swift in Sources */,
+				39D017A358DB7DE322BAE6CA /* UpdateChecker.swift in Sources */,
+				9B2672217B75E852C643B0E8 /* VolumeHUD.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CCE30A812C12C0EA37D8CE98 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8ED8D95B51030079CC15CBF0 /* ControlCoreTests.swift in Sources */,
+				6B561DEBA2B55FC63D510AB7 /* VisualSmokeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		46858484954488473EEAAC48 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F5FFBD4B3D434F30DC031DE7 /* MKOrbitControl */;
+			targetProxy = AB0C7A18D297A25DC43AEB4D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		11A3D0DAD71A48C02F37048E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				EXECUTABLE_NAME = "MK-OrbitControl";
+				INFOPLIST_FILE = "Config/App-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.4;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mkdevices.orbitcontrol;
+				PRODUCT_MODULE_NAME = MKOrbitControl;
+				PRODUCT_NAME = "MK-OrbitControl";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		18ACB81A6292C9132B1F1DFC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				EXECUTABLE_NAME = "MK-OrbitControl";
+				INFOPLIST_FILE = "Config/App-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.4;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mkdevices.orbitcontrol;
+				PRODUCT_MODULE_NAME = MKOrbitControl;
+				PRODUCT_NAME = "MK-OrbitControl";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		3DED663D1A8561D380FA2FE7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		49EA9A02D3F84721BA8433DD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mkdevices.orbitcontrol.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MK-OrbitControl.app/Contents/MacOS/MK-OrbitControl";
+			};
+			name = Debug;
+		};
+		578C2F7BD95BA7A638AA6185 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		650858E626194620A0ACBE13 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mkdevices.orbitcontrol.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MK-OrbitControl.app/Contents/MacOS/MK-OrbitControl";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		575F01BE7B9306A3BCFBDF01 /* Build configuration list for PBXNativeTarget "MKOrbitControlTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				49EA9A02D3F84721BA8433DD /* Debug */,
+				650858E626194620A0ACBE13 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		AEFF75289A3557319BA58C4E /* Build configuration list for PBXNativeTarget "MKOrbitControl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				11A3D0DAD71A48C02F37048E /* Debug */,
+				18ACB81A6292C9132B1F1DFC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F201B59F659CEEDA2768642F /* Build configuration list for PBXProject "MKOrbitControl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3DED663D1A8561D380FA2FE7 /* Debug */,
+				578C2F7BD95BA7A638AA6185 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BBF3F4FFDFD992B42DD8A499 /* XCRemoteSwiftPackageReference "HotKey" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/soffes/HotKey";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.2.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		53EAFDF9B849378841D40EBA /* HotKey */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BBF3F4FFDFD992B42DD8A499 /* XCRemoteSwiftPackageReference "HotKey" */;
+			productName = HotKey;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 602968EE35DB6D6AC8E1B29A /* Project object */;
+}

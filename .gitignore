@@ -1,0 +1,12 @@
+.build/
+.swiftpm/
+antelope_modules/
+__pycache__/
+.DS_Store
+dist-bundled/
+*.pyc
+*.dmg
+DerivedData/
+xcuserdata/
+*.xcuserstate
+.conductor/

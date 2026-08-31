@@ -1,0 +1,72 @@
+name: MKOrbitControl
+
+options:
+  createIntermediateGroups: true
+  deploymentTarget:
+    macOS: "13.0"
+
+packages:
+  HotKey:
+    url: https://github.com/soffes/HotKey
+    from: 0.2.1
+
+settings:
+  base:
+    ARCHS: arm64
+    SWIFT_VERSION: 5.0
+
+targets:
+  MKOrbitControl:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: Sources/MKOrbitControl
+        excludes:
+          - "*.icns"
+      - path: Config/AppIcon.icns
+        buildPhase: resources
+    info:
+      path: Config/App-Info.plist
+      properties:
+        CFBundleDisplayName: MK-OrbitControl
+        CFBundleIconFile: AppIcon
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        LSUIElement: true
+        NSHighResolutionCapable: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mkdevices.orbitcontrol
+        PRODUCT_NAME: MK-OrbitControl
+        PRODUCT_MODULE_NAME: MKOrbitControl
+        EXECUTABLE_NAME: MK-OrbitControl
+        MARKETING_VERSION: "1.4"
+        CURRENT_PROJECT_VERSION: "1"
+    dependencies:
+      - package: HotKey
+
+  MKOrbitControlTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: Tests/MKOrbitControlTests
+    dependencies:
+      - target: MKOrbitControl
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mkdevices.orbitcontrol.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/MK-OrbitControl.app/Contents/MacOS/MK-OrbitControl"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+schemes:
+  MKOrbitControl:
+    build:
+      targets:
+        MKOrbitControl: all
+        MKOrbitControlTests: [test]
+    test:
+      targets:
+        - MKOrbitControlTests
