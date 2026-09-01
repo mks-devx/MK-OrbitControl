@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Show toolchain
         run: |
@@ -37,20 +39,8 @@ jobs:
 
       - name: Validate scripts and Python syntax
         run: |
-          bash -n setup.sh build-dist.sh
+          bash -n setup.sh build-dist.sh scripts/privacy-audit.sh
           python3 -m compileall -q bridge.py Tests/BridgeTests
 
-      - name: Reject common private-data patterns
-        run: |
-          if git grep -n -I -E '/Users/[A-Za-z0-9._-]+/' -- . | grep -v '/Users/Shared/'; then
-            echo "Personal home path detected."
-            exit 1
-          fi
-          if git grep -n -I -E '[A-Za-z0-9._%+-]+@(gmail|hotmail|outlook|icloud)\.com' -- .; then
-            echo "Personal email address detected."
-            exit 1
-          fi
-          if git grep -n -I -E 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}'; then
-            echo "Possible credential detected."
-            exit 1
-          fi
+      - name: Audit public history for private data
+        run: bash scripts/privacy-audit.sh
