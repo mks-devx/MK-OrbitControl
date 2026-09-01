@@ -18,22 +18,71 @@ import sys
 import os
 import json
 import types
-import marshal
+import importlib.machinery
+import importlib.util
+import pwd
+import stat
 import struct
 import socket
 import time
 import hmac
 import re
 
-MODULES_DIR = os.environ.get(
-    "MK_ORBIT_MODULES_DIR",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "antelope_modules"),
-)
+
+def expected_runtime_directory(home=None):
+    """Return the per-user runtime root without trusting process environment."""
+    trusted_home = home if home is not None else pwd.getpwuid(os.getuid()).pw_dir
+    return os.path.realpath(
+        os.path.join(trusted_home, "Library", "Application Support", "MK-OrbitControl")
+    )
+
+
+RUNTIME_DIR = expected_runtime_directory()
+MODULES_DIR = os.path.join(RUNTIME_DIR, "antelope_modules")
 SERVER_HOST = "127.0.0.1"
 VALID_COMMANDS = {"set_volume", "set_mute", "set_dim", "set_mono"}
 VALID_CHANNELS = {0, 1, 2, 5}
 MAX_COMMAND_BYTES = 4096
 PREFERRED_SERVER_PORTS = (2024, 2021, 2023, 2022, 2025, 2020)
+
+
+def validate_private_path(path, trusted_root, require_directory):
+    """Reject links, foreign ownership, writable paths, and root escapes."""
+    real_root = os.path.realpath(trusted_root)
+    real_path = os.path.realpath(path)
+    if os.path.commonpath((real_root, real_path)) != real_root:
+        raise RuntimeError("Runtime path escapes the trusted application directory")
+
+    details = os.lstat(path)
+    if stat.S_ISLNK(details.st_mode):
+        raise RuntimeError("Runtime path must not be a symbolic link")
+    if details.st_uid != os.getuid():
+        raise RuntimeError("Runtime path is not owned by the current user")
+    if details.st_mode & 0o022:
+        raise RuntimeError("Runtime path is writable by another user")
+    if require_directory and not stat.S_ISDIR(details.st_mode):
+        raise RuntimeError("Expected a runtime directory")
+    if not require_directory and not stat.S_ISREG(details.st_mode):
+        raise RuntimeError("Expected a regular runtime file")
+    return real_path
+
+
+def validate_modules_directory(path=MODULES_DIR):
+    validate_private_path(RUNTIME_DIR, RUNTIME_DIR, require_directory=True)
+    return validate_private_path(path, RUNTIME_DIR, require_directory=True)
+
+
+def load_trusted_bytecode_module(module, relative_path):
+    modules_root = validate_modules_directory()
+    bytecode_path = os.path.join(modules_root, relative_path)
+    trusted_path = validate_private_path(
+        bytecode_path, modules_root, require_directory=False
+    )
+    loader = importlib.machinery.SourcelessFileLoader(module.__name__, trusted_path)
+    module.__file__ = trusted_path
+    module.__loader__ = loader
+    module.__spec__ = importlib.util.spec_from_loader(module.__name__, loader)
+    loader.exec_module(module)
 
 
 def candidate_ports():
@@ -167,9 +216,11 @@ def setup_environment():
         DEVICE_SLUG, REPORT_FORMAT_PATH, DEVICE_NAME, DEVICE_SERIAL = find_device()
     if not DEVICE_SLUG or not REPORT_FORMAT_PATH:
         raise RuntimeError("Cannot safely identify one installed Antelope device panel")
-    if not os.path.isdir(MODULES_DIR):
-        raise RuntimeError("Antelope modules are missing; run setup.sh first")
-    sys.path.insert(0, MODULES_DIR)
+    try:
+        modules_root = validate_modules_directory()
+    except (OSError, RuntimeError) as error:
+        raise RuntimeError("Antelope modules are missing or unsafe; run setup.sh again") from error
+    sys.path.insert(0, modules_root)
     os.environ["SETTINGSPY_MODULE"] = ""
     os.environ["SETTINGSPY_CATALOG"] = ""
     from settingspy import spy
@@ -182,7 +233,6 @@ def fix_circular_imports():
     import antelope.dev.device_info
 
     reports_mod = types.ModuleType("antelope.dev.reports")
-    reports_mod.__file__ = os.path.join(MODULES_DIR, "antelope/dev/reports.pyc")
     reports_mod.__path__ = []
     reports_mod.__package__ = "antelope.dev"
     reports_mod.ReportFactory = type("DummyRF", (), {})
@@ -190,7 +240,6 @@ def fix_circular_imports():
     sys.modules["antelope.dev.reports"] = reports_mod
 
     beacon_mod = types.ModuleType("antelope.networking.beacon")
-    beacon_mod.__file__ = os.path.join(MODULES_DIR, "antelope/networking/beacon.pyc")
     beacon_mod.__path__ = []
     beacon_mod.__package__ = "antelope.networking"
     beacon_mod.ServiceInfo = type("SI", (), {})
@@ -200,14 +249,11 @@ def fix_circular_imports():
 
     import antelope.dev.base
 
-    for mod, path in [(reports_mod, "antelope/dev/reports.pyc"),
-                      (beacon_mod, "antelope/networking/beacon.pyc")]:
-        pyc = os.path.join(MODULES_DIR, path)
-        with open(pyc, "rb") as f:
-            f.read(16)
-            code = marshal.loads(f.read())
-        mod.__dict__["__name__"] = mod.__name__
-        exec(code, mod.__dict__)
+    for module, relative_path in [
+        (reports_mod, "antelope/dev/reports.pyc"),
+        (beacon_mod, "antelope/networking/beacon.pyc"),
+    ]:
+        load_trusted_bytecode_module(module, relative_path)
 
 
 class FakeServiceInfo:

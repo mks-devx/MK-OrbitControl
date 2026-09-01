@@ -1,6 +1,8 @@
 import importlib.util
+import os
 import pathlib
 import socket
+import tempfile
 import unittest
 
 
@@ -63,6 +65,51 @@ class BridgeValidationTests(unittest.TestCase):
         writer.sendall(b"ab")
         writer.sendall(b"cdef")
         self.assertEqual(BRIDGE.recv_exact(reader, 6), b"abcdef")
+
+    def test_expected_runtime_directory_does_not_use_process_home(self):
+        self.assertEqual(
+            BRIDGE.expected_runtime_directory("/trusted-home"),
+            "/trusted-home/Library/Application Support/MK-OrbitControl",
+        )
+
+    def test_private_runtime_paths_reject_links_and_shared_writes(self):
+        with tempfile.TemporaryDirectory() as temporary_root:
+            runtime = pathlib.Path(temporary_root) / "runtime"
+            modules = runtime / "antelope_modules"
+            runtime.mkdir(mode=0o700)
+            modules.mkdir(mode=0o700)
+
+            self.assertEqual(
+                BRIDGE.validate_private_path(str(modules), str(runtime), True),
+                os.path.realpath(modules),
+            )
+
+            modules.chmod(0o722)
+            with self.assertRaisesRegex(RuntimeError, "writable by another user"):
+                BRIDGE.validate_private_path(str(modules), str(runtime), True)
+            modules.chmod(0o700)
+
+            linked_modules = runtime / "linked-modules"
+            os.symlink(modules, linked_modules)
+            with self.assertRaisesRegex(RuntimeError, "symbolic link"):
+                BRIDGE.validate_private_path(str(linked_modules), str(runtime), True)
+
+    def test_private_runtime_file_must_be_regular_and_owner_only(self):
+        with tempfile.TemporaryDirectory() as temporary_root:
+            runtime = pathlib.Path(temporary_root) / "runtime"
+            runtime.mkdir(mode=0o700)
+            bytecode = runtime / "module.pyc"
+            bytecode.write_bytes(b"test")
+            bytecode.chmod(0o600)
+
+            self.assertEqual(
+                BRIDGE.validate_private_path(str(bytecode), str(runtime), False),
+                os.path.realpath(bytecode),
+            )
+
+            bytecode.chmod(0o666)
+            with self.assertRaisesRegex(RuntimeError, "writable by another user"):
+                BRIDGE.validate_private_path(str(bytecode), str(runtime), False)
 
 
 if __name__ == "__main__":

@@ -388,7 +388,6 @@ final class AntelopeCommander {
 
         var environment = ProcessInfo.processInfo.environment
         let modulesPath = appSupport.appendingPathComponent("antelope_modules", isDirectory: true).path
-        environment["MK_ORBIT_MODULES_DIR"] = modulesPath
         if let resources, selectedPython.hasPrefix(resources.path) {
             let pythonRoot = resources.appendingPathComponent("python", isDirectory: true)
             let standardLibrary = pythonRoot.appendingPathComponent("lib/python3.8", isDirectory: true)
