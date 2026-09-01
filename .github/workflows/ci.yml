@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests
+    runs-on: macos-14
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Show toolchain
+        run: |
+          swift --version
+          python3 --version
+
+      - name: Run Swift tests
+        run: swift test --scratch-path "$RUNNER_TEMP/MKOrbitControl-SwiftPM"
+
+      - name: Run bridge tests
+        run: python3 -m unittest discover -s Tests/BridgeTests -v
+
+      - name: Validate scripts and Python syntax
+        run: |
+          bash -n setup.sh build-dist.sh
+          python3 -m compileall -q bridge.py Tests/BridgeTests
+
+      - name: Reject common private-data patterns
+        run: |
+          if git grep -n -I -E '/Users/[A-Za-z0-9._-]+/' -- . | grep -v '/Users/Shared/'; then
+            echo "Personal home path detected."
+            exit 1
+          fi
+          if git grep -n -I -E '[A-Za-z0-9._%+-]+@(gmail|hotmail|outlook|icloud)\.com' -- .; then
+            echo "Personal email address detected."
+            exit 1
+          fi
+          if git grep -n -I -E 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}'; then
+            echo "Possible credential detected."
+            exit 1
+          fi

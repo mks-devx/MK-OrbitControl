@@ -103,9 +103,19 @@ Have a Synergy Core device not listed here? [Test and report your results](../..
 
 ## Installation
 
+### Current availability
+
+MK-OrbitControl is currently a source-only beta. A public DMG will be published on the [Releases page](../../releases) only after Developer ID signing, notarisation, and clean-Mac validation are complete.
+
+For now, use the [Build from Source](#build-from-source) instructions below. Do not download application bundles or DMGs offered through issues, forks, or third-party links.
+
+### Signed release installation
+
+The following steps apply after a notarised DMG is published.
+
 ### Step 1: Download
 
-Download the latest DMG from the [Releases page](../../releases/latest).
+Download the notarised DMG from the [Releases page](../../releases).
 
 ### Step 2: Install the App
 
@@ -131,7 +141,7 @@ You should see `Extracted X modules` followed by `Done!`.
 
 Open **MK-OrbitControl** from your Applications folder. A speaker icon will appear in your menu bar (top right of the screen). Click it to open the controller.
 
-> Ad-hoc local builds may require right-click → Open. Public distribution should use a Developer ID-signed and notarized DMG.
+> Ad-hoc local builds may require right-click → Open. No current public build has been presented as signed, notarised, or distribution-ready.
 
 ---
 

@@ -1,10 +1,18 @@
 # Installation Guide — MK-OrbitControl
 
-## Quick Install (Recommended)
+## Current Availability
+
+MK-OrbitControl is currently a source-only beta. There is no public DMG release yet. Build from source using the instructions below; do not install application bundles or DMGs from issues, forks, or third-party links.
+
+A downloadable release will be added to [GitHub Releases](https://github.com/mks-devx/MK-OrbitControl/releases) only after Developer ID signing, notarisation, and clean-Mac validation.
+
+## Signed Release Installation
+
+These steps apply after a notarised DMG is published.
 
 ### Step 1: Download the DMG
-- Visit [Releases](https://github.com/mks-devx/MK-OrbitControl/releases/latest)
-- Download the current `MK-OrbitControl` DMG
+- Visit [Releases](https://github.com/mks-devx/MK-OrbitControl/releases)
+- Download the current notarised `MK-OrbitControl` DMG
 - Double-click to mount
 
 ### Step 2: Install the App
