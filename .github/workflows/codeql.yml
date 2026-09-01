@@ -27,7 +27,7 @@ jobs:
         include:
           - language: swift
             runner: macos-15
-            build-mode: manual
+            build-mode: none
           - language: python
             runner: ubuntu-latest
             build-mode: none
@@ -42,10 +42,6 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-
-      - name: Build Swift
-        if: matrix.language == 'swift'
-        run: swift build --scratch-path "$RUNNER_TEMP/MKOrbitControl-CodeQL"
 
       - name: Analyse
         uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
