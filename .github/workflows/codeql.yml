@@ -26,7 +26,7 @@ jobs:
       matrix:
         include:
           - language: swift
-            runner: macos-26
+            runner: macos-15
             build-mode: manual
           - language: python
             runner: ubuntu-latest

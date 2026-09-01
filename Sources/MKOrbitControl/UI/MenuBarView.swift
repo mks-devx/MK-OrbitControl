@@ -14,6 +14,33 @@ struct CommanderKey: EnvironmentKey {
 
 private extension View {
     @ViewBuilder
+    func orbitTranslucentSurface<S: Shape>(in shape: S) -> some View {
+        self
+            .background(.ultraThinMaterial, in: shape)
+            .overlay(shape.stroke(Color.white.opacity(0.12), lineWidth: 0.75))
+    }
+
+    @ViewBuilder
+    func orbitLiquidGlassSurface<S: Shape>(
+        in shape: S,
+        tint: Color?,
+        interactive: Bool
+    ) -> some View {
+#if compiler(>=6.2)
+        if #available(macOS 26.0, *) {
+            self.glassEffect(
+                Glass.regular.tint(tint).interactive(interactive),
+                in: shape
+            )
+        } else {
+            self.orbitTranslucentSurface(in: shape)
+        }
+#else
+        self.orbitTranslucentSurface(in: shape)
+#endif
+    }
+
+    @ViewBuilder
     func suppressDefaultFocusEffect() -> some View {
         if #available(macOS 14.0, *) {
             self.focusEffectDisabled()
@@ -35,23 +62,16 @@ private extension View {
                 .background(tint ?? Color.primary.opacity(0.055), in: shape)
                 .overlay(shape.stroke(Color.primary.opacity(0.10), lineWidth: 0.75))
         case .translucent:
-            self
-                .background(.ultraThinMaterial, in: shape)
-                .overlay(shape.stroke(Color.white.opacity(0.12), lineWidth: 0.75))
+            self.orbitTranslucentSurface(in: shape)
         case .liquidGlass:
             if ProcessInfo.processInfo.environment["MK_CAPTURE_UI"] != nil {
-                self
-                    .background(.ultraThinMaterial, in: shape)
-                    .overlay(shape.stroke(Color.white.opacity(0.12), lineWidth: 0.75))
-            } else if #available(macOS 26.0, *) {
-                self.glassEffect(
-                    Glass.regular.tint(tint).interactive(interactive),
-                    in: shape
-                )
+                self.orbitTranslucentSurface(in: shape)
             } else {
-                self
-                    .background(.ultraThinMaterial, in: shape)
-                    .overlay(shape.stroke(Color.white.opacity(0.12), lineWidth: 0.75))
+                self.orbitLiquidGlassSurface(
+                    in: shape,
+                    tint: tint,
+                    interactive: interactive
+                )
             }
         }
     }
