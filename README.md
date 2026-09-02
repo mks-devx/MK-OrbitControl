@@ -378,6 +378,7 @@ Contributions welcome:
 - **Device testing** — try it on your Synergy Core device and [open an issue](../../issues) with your results
 - **Channel mapping** — help identify correct output indices for untested devices
 - **Bug reports** — include your device model, macOS version, and any console output
+- **Interface work** — follow the repository's [design direction](docs/DESIGN.md)
 
 ---
 
