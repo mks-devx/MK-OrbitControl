@@ -1,6 +1,6 @@
 # MK-OrbitControl
 
-> macOS menu bar monitor controller for Antelope Synergy Core audio interfaces.
+> Experimental macOS menu bar monitor controller for selected Antelope Synergy Core audio interfaces.
 
 Control volume, mute, dim, mono, and output selection directly from your macOS menu bar — without opening the Antelope Control Panel.
 
@@ -84,7 +84,7 @@ Control volume, mute, dim, mono, and output selection directly from your macOS m
 - **macOS 13+**
 - **Apple Silicon Mac**; Intel packaging is not currently supported or validated
 - **Antelope Launcher** installed and running ([download](https://www.antelopeaudio.com/downloads/))
-- **Synergy Core device** connected via Thunderbolt
+- **A supported Synergy Core device** connected via Thunderbolt; verify the mapping table below before testing
 
 ### Tested Devices
 
@@ -127,10 +127,10 @@ Download the notarised DMG from the [Releases page](../../releases).
 
 Open MK-OrbitControl and click **Run Setup** if the setup notice appears. It extracts the required modules from the Antelope software already installed on your Mac. No proprietary code is downloaded or included in the app.
 
-If in-app setup cannot run, keep the DMG mounted and use this Terminal fallback:
+If in-app setup cannot run after copying the app to Applications, use this Terminal fallback:
 
 ```bash
-bash "/Volumes/MK-OrbitControl v1.4/setup.sh"
+bash "/Applications/MK-OrbitControl.app/Contents/Resources/setup.sh"
 ```
 
 You should see `Extracted X modules` followed by `Done!`.
@@ -180,7 +180,7 @@ Open **MK-OrbitControl** from your Applications folder. A speaker icon will appe
 
 ### "Application is not supported on this Mac"
 
-macOS blocks unsigned or improperly signed applications. Three fixes, in order of preference:
+This message can indicate an incompatible CPU architecture, an unsupported macOS version, a damaged bundle, or a signing problem. Confirm that the Mac is Apple Silicon and runs macOS 13 or later before trying the signing workarounds below.
 
 **Fix 1 — Right-click to open (recommended):**
 1. Open Finder → Applications
@@ -341,14 +341,16 @@ bash setup.sh
 open /tmp/MKOrbitControl-Release/Build/Products/Release/MK-OrbitControl.app
 ```
 
-### Build DMG for Distribution
+### Build a Local Audit DMG
 
 ```bash
-bash build-dist.sh
-# Output: ~/Desktop/MK-OrbitControl-v{version}.dmg
+ALLOW_UNTAGGED_BUILD=1 ALLOW_DIRTY_BUILD=1 bash build-dist.sh
+# Output: ~/Desktop/MK-OrbitControl-UNRELEASED-{commit}.dmg
 ```
 
-The build script detects the version from the latest git tag, generates the Xcode project, builds an arm64 app, creates a relocatable Python 3.8 runtime, signs nested code and the app, verifies the signature, and creates a DMG. Set `SIGN_IDENTITY` to a Developer ID Application identity and `NOTARY_PROFILE` to a `notarytool` keychain profile to produce and validate a notarized DMG. Without both, the result is explicitly a local ad-hoc-signed package.
+The script verifies the pinned dependency manifest, generates the Xcode project, builds an arm64 app, creates a relocatable Python 3.8 runtime, neutralises private build-machine paths, bundles third-party licences, tests the runtime, audits the artifact, signs nested code, and creates a DMG plus SHA-256 checksum.
+
+Public packages must be built from a clean checkout at an exact annotated `vX.Y.Z` tag. Set `SIGN_IDENTITY` to a Developer ID Application identity and `NOTARY_PROFILE` to a `notarytool` keychain profile. The script refuses a Developer ID build without notarisation. Untagged or dirty builds require the explicit local-audit flags shown above and are visibly labelled `UNRELEASED`.
 
 ---
 
@@ -360,9 +362,12 @@ rm -rf /Applications/MK-OrbitControl.app
 
 # (Optional) Remove extracted compatibility modules and bridge
 rm -rf "$HOME/Library/Application Support/MK-OrbitControl"
+
+# (Optional) Remove saved preferences after disabling Launch at Login in the app
+defaults delete com.mkdevices.orbitcontrol 2>/dev/null || true
 ```
 
-No launch agents or system services are installed.
+Disable **Launch at Login** in Settings before deleting the app. MK-OrbitControl installs no privileged helper, launch daemon, or system service; Antelope Launcher manages its own separate services.
 
 ---
 
@@ -387,13 +392,11 @@ Contributions welcome:
 - Bridge daemon now auto-reconnects after connection drops during extended uptime
 - No more manual bridge restarts after sleep/wake or long sessions
 
-### v1.2 — Code Signing Fix
+### v1.2 — Interface and Local Packaging Update
 - Fixed "application not supported" error on macOS 15.7+
-- App now properly code signed (ad-hoc)
-- DMG packaging for better install experience
+- Added ad-hoc signing for local development packages; this is not Developer ID distribution signing
+- Added local DMG packaging
 - Added `docs/INSTALL.md` with step-by-step troubleshooting
-
-### v1.2 — Major Update
 - Mini mode, floating window, MIDI learn
 - Peak hold meters, 12 themes, 8 fonts, 9 menu bar icons
 - Global hotkeys, volume HUD, night mode
@@ -419,3 +422,5 @@ This software uses the same command protocol as the official Control Panel and l
 ## License
 
 [MIT](LICENSE)
+
+Distribution packages also include [third-party notices](THIRD_PARTY_NOTICES.md) and the complete applicable licence texts.

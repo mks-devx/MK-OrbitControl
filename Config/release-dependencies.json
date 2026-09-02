@@ -1,0 +1,23 @@
+{
+  "python": {
+    "version": "3.8.20",
+    "packages": {
+      "async-timeout": "5.0.1",
+      "ifaddr": "0.2.0",
+      "netifaces": "0.11.0",
+      "zeroconf": "0.136.2"
+    }
+  },
+  "homebrew": {
+    "gettext": "1.0",
+    "openssl@3": "3.6.3",
+    "xcodegen": "2.46.0",
+    "xz": "5.8.3"
+  },
+  "swiftPackages": {
+    "hotkey": {
+      "version": "0.2.1",
+      "revision": "a3cf605d7a96f6ff50e04fcb6dea6e2613cfcbe4"
+    }
+  }
+}

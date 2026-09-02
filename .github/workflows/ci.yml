@@ -40,7 +40,8 @@ jobs:
       - name: Validate scripts and Python syntax
         run: |
           bash -n setup.sh build-dist.sh scripts/privacy-audit.sh
-          python3 -m compileall -q bridge.py Tests/BridgeTests
+          python3 -m compileall -q bridge.py scripts/release_tools.py Tests/BridgeTests
+          python3 -m json.tool Config/release-dependencies.json >/dev/null
 
       - name: Audit public history for private data
         run: bash scripts/privacy-audit.sh

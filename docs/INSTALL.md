@@ -26,7 +26,7 @@ These steps apply after a notarised DMG is published.
 2. If the setup notice appears, click **Run Setup**.
 3. If in-app setup fails, keep the DMG mounted and run this Terminal fallback:
    ```bash
-   bash "/Volumes/MK-OrbitControl v1.4/setup.sh"
+   bash "/Applications/MK-OrbitControl.app/Contents/Resources/setup.sh"
    ```
 4. Wait for "Extracted X modules" and reopen the app.
 
@@ -41,7 +41,7 @@ These steps apply after a notarised DMG is published.
 
 ### ❌ "Application not supported on this Mac"
 
-**This is a code signing issue on macOS 13+**
+This can indicate an incompatible CPU architecture, an unsupported macOS version, a damaged bundle, or a signing problem. Confirm that the Mac is Apple Silicon and runs macOS 13 or later first.
 
 **Solution:**
 1. Right-click the MK-OrbitControl.app in Applications
@@ -73,7 +73,7 @@ Same as above — use the right-click "Open" workaround.
 2. Launch it once (it installs the AntelopeAudioServer)
 3. Then run the setup script again:
    ```bash
-   bash "/Volumes/MK-OrbitControl v1.4/setup.sh"
+   bash "/Applications/MK-OrbitControl.app/Contents/Resources/setup.sh"
    ```
 
 ### ❌ Setup script says "already extracted"
@@ -126,12 +126,14 @@ bash setup.sh
 .build/release/MKOrbitControl
 ```
 
-### Build DMG for Distribution
+### Build a Local Audit DMG
 
 ```bash
-bash build-dist.sh
-# Creates: ~/Desktop/MK-OrbitControl-vX.Y.Z.dmg
+ALLOW_UNTAGGED_BUILD=1 ALLOW_DIRTY_BUILD=1 bash build-dist.sh
+# Creates: ~/Desktop/MK-OrbitControl-UNRELEASED-{commit}.dmg
 ```
+
+Public packages require a clean checkout at an exact annotated `vX.Y.Z` tag, a Developer ID Application identity, and a `notarytool` keychain profile. The build stops if dependencies differ from `Config/release-dependencies.json`, private build paths remain, licence texts are missing, or runtime smoke tests fail.
 
 ---
 
@@ -143,8 +145,10 @@ bash build-dist.sh
 | **bridge-token** | `~/Library/Application Support/MK-OrbitControl/` | Owner-only authentication token for the local bridge |
 | **setup-complete** | `~/Library/Application Support/MK-OrbitControl/` | Setup completion marker |
 | **antelope_modules/** | `~/Library/Application Support/MK-OrbitControl/` | Extracted from your Antelope installation |
+| **Preferences** | `~/Library/Preferences/com.mkdevices.orbitcontrol.plist` | App settings, mappings, and appearance choices |
+| **Login Item** | macOS background-items database | Present only when Launch at Login is enabled |
 
-Nothing else is installed. The app talks to the official Antelope Audio server on your Mac (AntelopeAudioServer), which is part of Antelope Launcher.
+MK-OrbitControl installs no privileged helper, launch daemon, or system service. The app talks to the official Antelope Audio server on your Mac, which is installed and managed separately by Antelope Launcher.
 
 ---
 
@@ -156,7 +160,12 @@ rm -rf /Applications/MK-OrbitControl.app
 
 # (Optional) Remove extracted compatibility modules and bridge
 rm -rf "$HOME/Library/Application Support/MK-OrbitControl"
+
+# (Optional) Remove saved preferences
+defaults delete com.mkdevices.orbitcontrol 2>/dev/null || true
 ```
+
+Disable **Launch at Login** in MK-OrbitControl Settings before deleting the app so macOS removes its login-item registration cleanly.
 
 ---
 
