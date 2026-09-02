@@ -57,6 +57,32 @@ class ReleaseToolsTests(unittest.TestCase):
             with self.assertRaisesRegex(TOOLS.ReleaseCheckError, "Python cache residue"):
                 TOOLS.audit_artifact(root, ["Licences/Required.txt"])
 
+    def test_artifact_audit_rejects_personal_consumer_email(self):
+        with tempfile.TemporaryDirectory() as temporary_root:
+            root = pathlib.Path(temporary_root)
+            address = b"private.person" + b"@" + b"gmail.com"
+            (root / "metadata.txt").write_bytes(address)
+            with self.assertRaisesRegex(
+                TOOLS.ReleaseCheckError, "personal email address"
+            ):
+                TOOLS.audit_artifact(root, [])
+
+    def test_artifact_audit_allows_upstream_contact_email(self):
+        with tempfile.TemporaryDirectory() as temporary_root:
+            root = pathlib.Path(temporary_root)
+            address = b"maintainer" + b"@" + b"example.org"
+            (root / "licence.txt").write_bytes(address)
+            TOOLS.audit_artifact(root, [])
+
+    def test_artifact_audit_allows_vendored_consumer_email(self):
+        with tempfile.TemporaryDirectory() as temporary_root:
+            root = pathlib.Path(temporary_root)
+            source = root / "Contents" / "Resources" / "python" / "module.py"
+            source.parent.mkdir(parents=True)
+            address = b"upstream.author" + b"@" + b"gmail.com"
+            source.write_bytes(address)
+            TOOLS.audit_artifact(root, [])
+
     def test_artifact_audit_accepts_sanitised_package(self):
         with tempfile.TemporaryDirectory() as temporary_root:
             root = pathlib.Path(temporary_root)

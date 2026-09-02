@@ -11,8 +11,8 @@ import sys
 
 
 PERSONAL_HOME = re.compile(rb"/Users/[^/\x00\s\"']+")
-EMAIL_ADDRESS = re.compile(
-    rb"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", re.IGNORECASE
+PERSONAL_EMAIL_ADDRESS = re.compile(
+    rb"[A-Za-z0-9._%+-]+@(?:gmail|hotmail|outlook|icloud)\.com\b", re.IGNORECASE
 )
 CREDENTIAL_PATTERNS = (
     re.compile(rb"BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY"),
@@ -143,6 +143,17 @@ def validate_symlinks(root):
             raise ReleaseCheckError("package contains a symlink escaping its root")
 
 
+def is_vendored_email_scope(root, path):
+    relative = path.relative_to(root).as_posix()
+    return relative.startswith(
+        (
+            "Contents/Resources/python/",
+            "Contents/Resources/ThirdPartyLicenses/",
+            "ThirdPartyLicenses/",
+        )
+    )
+
+
 def audit_artifact(root, required_licences):
     validate_symlinks(root)
     failures = []
@@ -158,8 +169,10 @@ def audit_artifact(root, required_licences):
         ]
         if private_homes:
             failures.append("private macOS home path")
-        if EMAIL_ADDRESS.search(data):
-            failures.append("email address")
+        if PERSONAL_EMAIL_ADDRESS.search(data) and not is_vendored_email_scope(
+            root, path
+        ):
+            failures.append("personal email address")
         if any(pattern.search(data) for pattern in CREDENTIAL_PATTERNS):
             failures.append("credential-like content")
 

@@ -382,7 +382,7 @@ Contributions welcome:
 
 ### v1.5.0 — First Signed Public Beta
 - First Developer ID signed and Apple-notarised public DMG
-- Release packages are audited for local paths, email addresses, credential-like content, and required third-party licences
+- Release packages are audited for local paths, personal email addresses, credential-like content, and required third-party licences
 - Hardened local bridge authentication and loopback-only command access
 - Improved connection recovery, output controls, appearance options, transparency, layout, and icon consistency
 - Removed the discontinued widget integration and cleaned generated/obsolete repository files
