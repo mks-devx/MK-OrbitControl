@@ -41,7 +41,7 @@ targets:
         PRODUCT_NAME: MK-OrbitControl
         PRODUCT_MODULE_NAME: MKOrbitControl
         EXECUTABLE_NAME: MK-OrbitControl
-        MARKETING_VERSION: "1.4"
+        MARKETING_VERSION: "1.5.0"
         CURRENT_PROJECT_VERSION: "1"
     dependencies:
       - package: HotKey

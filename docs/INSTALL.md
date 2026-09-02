@@ -2,13 +2,11 @@
 
 ## Current Availability
 
-MK-OrbitControl is currently a source-only beta. There is no public DMG release yet. Build from source using the instructions below; do not install application bundles or DMGs from issues, forks, or third-party links.
-
-A downloadable release will be added to [GitHub Releases](https://github.com/mks-devx/MK-OrbitControl/releases) only after Developer ID signing, notarisation, and clean-Mac validation.
+The official Apple Silicon public beta is distributed only through [GitHub Releases](https://github.com/mks-devx/MK-OrbitControl/releases). Release DMGs are Developer ID signed, notarised by Apple, and published with a SHA-256 checksum. Do not install application bundles or DMGs from issues, forks, or third-party links.
 
 ## Signed Release Installation
 
-These steps apply after a notarised DMG is published.
+These steps apply to the official notarised DMG.
 
 ### Step 1: Download the DMG
 - Visit [Releases](https://github.com/mks-devx/MK-OrbitControl/releases)
@@ -43,16 +41,15 @@ These steps apply after a notarised DMG is published.
 
 This can indicate an incompatible CPU architecture, an unsupported macOS version, a damaged bundle, or a signing problem. Confirm that the Mac is Apple Silicon and runs macOS 13 or later first.
 
-**Solution:**
-1. Right-click the MK-OrbitControl.app in Applications
-2. Select **"Open"** from the menu
-3. Click **"Open"** in the dialog that appears
-4. App should launch normally now
-5. From then on, you can click it normally
+**Official release:**
+1. Confirm the Mac is Apple Silicon and runs macOS 13 or later.
+2. Delete the rejected copy and download the DMG again from GitHub Releases.
+3. Verify the published SHA-256 checksum.
+4. If macOS still rejects it, open an issue rather than disabling Gatekeeper.
 
 ### ❌ "App can't be opened because it's from an unidentified developer"
 
-Same as above — use the right-click "Open" workaround.
+The official release should not show this warning because it is Developer ID signed and notarised. Delete the copy, download it again from the official Releases page, verify the checksum, and report the problem if it persists. Right-click → Open is appropriate only for your own ad-hoc source build.
 
 ### ❌ Icon doesn't show in menu bar
 

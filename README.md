@@ -105,13 +105,13 @@ Have a Synergy Core device not listed here? [Test and report your results](../..
 
 ### Current availability
 
-MK-OrbitControl is currently a source-only beta. A public DMG will be published on the [Releases page](../../releases) only after Developer ID signing, notarisation, and clean-Mac validation are complete.
+The official Apple Silicon public beta is distributed only through the [GitHub Releases page](../../releases). Release DMGs are Developer ID signed, notarised by Apple, and published with a SHA-256 checksum.
 
-For now, use the [Build from Source](#build-from-source) instructions below. Do not download application bundles or DMGs offered through issues, forks, or third-party links.
+Do not download application bundles or DMGs offered through issues, forks, or third-party links. Developers can also use the [Build from Source](#build-from-source) instructions below.
 
 ### Signed release installation
 
-The following steps apply after a notarised DMG is published.
+Use these steps for the official notarised DMG.
 
 ### Step 1: Download
 
@@ -141,7 +141,7 @@ You should see `Extracted X modules` followed by `Done!`.
 
 Open **MK-OrbitControl** from your Applications folder. A speaker icon will appear in your menu bar (top right of the screen). Click it to open the controller.
 
-> Ad-hoc local builds may require right-click → Open. No current public build has been presented as signed, notarised, or distribution-ready.
+> Ad-hoc local builds may require right-click → Open. Official GitHub Release builds are Developer ID signed and notarised.
 
 ---
 
@@ -180,24 +180,20 @@ Open **MK-OrbitControl** from your Applications folder. A speaker icon will appe
 
 ### "Application is not supported on this Mac"
 
-This message can indicate an incompatible CPU architecture, an unsupported macOS version, a damaged bundle, or a signing problem. Confirm that the Mac is Apple Silicon and runs macOS 13 or later before trying the signing workarounds below.
+This message can indicate an incompatible CPU architecture, an unsupported macOS version, a damaged download, or a signing problem. Confirm that the Mac is Apple Silicon and runs macOS 13 or later, then download the DMG again from the official Releases page and verify its checksum.
 
-**Fix 1 — Right-click to open (recommended):**
+**For an official release:**
+1. Delete the rejected copy.
+2. Download it again from the official Releases page.
+3. Verify the published SHA-256 checksum.
+4. If macOS still rejects it, open an issue rather than disabling Gatekeeper.
+
+**For a local source build only:**
 1. Open Finder → Applications
 2. Right-click **MK-OrbitControl.app**
 3. Select **"Open"** from the context menu
 4. Click **"Open"** in the dialog
 5. After this, the app opens normally with a double-click
-
-**Fix 2 — Remove quarantine attribute:**
-```bash
-xattr -d com.apple.quarantine /Applications/MK-OrbitControl.app
-```
-
-**Fix 3 — Allow in System Settings:**
-1. Go to **System Settings → Privacy & Security**
-2. Scroll down — you'll see a message about MK-OrbitControl being blocked
-3. Click **"Open Anyway"**
 
 ### App Shows "Offline"
 
@@ -383,6 +379,14 @@ Contributions welcome:
 ---
 
 ## Changelog
+
+### v1.5.0 — First Signed Public Beta
+- First Developer ID signed and Apple-notarised public DMG
+- Release packages are audited for local paths, email addresses, credential-like content, and required third-party licences
+- Hardened local bridge authentication and loopback-only command access
+- Improved connection recovery, output controls, appearance options, transparency, layout, and icon consistency
+- Removed the discontinued widget integration and cleaned generated/obsolete repository files
+- CI now tests Swift and Python code, audits reachable Git history, and runs CodeQL for both languages
 
 ### v1.4 — Server Restart
 - **Restart Server button** — when offline, an orange indicator appears in the header to relaunch the Antelope server with one click (no admin password needed)

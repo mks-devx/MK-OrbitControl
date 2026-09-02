@@ -2,7 +2,7 @@
 
 ## Supported version
 
-Security fixes are applied to the current `main` branch. There is no public binary release yet.
+Security fixes are applied to the current `main` branch and the latest GitHub Release.
 
 ## Reporting a vulnerability
 
