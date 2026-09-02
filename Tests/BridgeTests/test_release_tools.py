@@ -83,6 +83,22 @@ class ReleaseToolsTests(unittest.TestCase):
             source.write_bytes(address)
             TOOLS.audit_artifact(root, [])
 
+    def test_artifact_audit_allows_vendored_email_in_nested_app(self):
+        with tempfile.TemporaryDirectory() as temporary_root:
+            root = pathlib.Path(temporary_root)
+            source = (
+                root
+                / "Product.app"
+                / "Contents"
+                / "Resources"
+                / "python"
+                / "module.py"
+            )
+            source.parent.mkdir(parents=True)
+            address = b"upstream.author" + b"@" + b"gmail.com"
+            source.write_bytes(address)
+            TOOLS.audit_artifact(root, [])
+
     def test_artifact_audit_accepts_sanitised_package(self):
         with tempfile.TemporaryDirectory() as temporary_root:
             root = pathlib.Path(temporary_root)

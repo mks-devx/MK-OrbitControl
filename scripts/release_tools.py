@@ -145,12 +145,11 @@ def validate_symlinks(root):
 
 def is_vendored_email_scope(root, path):
     relative = path.relative_to(root).as_posix()
-    return relative.startswith(
-        (
-            "Contents/Resources/python/",
-            "Contents/Resources/ThirdPartyLicenses/",
-            "ThirdPartyLicenses/",
-        )
+    rooted = "/" + relative
+    return (
+        "/Contents/Resources/python/" in rooted
+        or "/Contents/Resources/ThirdPartyLicenses/" in rooted
+        or relative.startswith("ThirdPartyLicenses/")
     )
 
 
