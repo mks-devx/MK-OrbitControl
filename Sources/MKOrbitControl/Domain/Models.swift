@@ -45,15 +45,12 @@ struct ChannelState: Equatable {
 enum ControlAvailability: Equatable {
     case starting
     case ready
-    case missingRuntime
-    case missingBridge
-    case missingModules
-    case bridgeUnavailable
+    case serverUnavailable
     case commandFailed
 
     var isBlocking: Bool {
         switch self {
-        case .missingRuntime, .missingBridge, .missingModules, .bridgeUnavailable, .commandFailed:
+        case .serverUnavailable, .commandFailed:
             return true
         case .starting, .ready:
             return false
@@ -62,23 +59,16 @@ enum ControlAvailability: Equatable {
 
     var title: String {
         switch self {
-        case .starting: return "Starting control bridge"
-        case .ready: return "Control bridge ready"
-        case .missingRuntime: return "Control runtime is missing"
-        case .missingBridge: return "Control bridge is missing"
-        case .missingModules: return "Setup is required"
-        case .bridgeUnavailable: return "Control bridge is unavailable"
+        case .starting: return "Connecting to device"
+        case .ready: return "Device control ready"
+        case .serverUnavailable: return "Device service is unavailable"
         case .commandFailed: return "The last command failed"
         }
     }
 
     var recovery: String {
         switch self {
-        case .missingModules:
-            return "Run setup.sh from the downloaded disk image, then reopen the app."
-        case .missingRuntime, .missingBridge:
-            return "Reinstall MK-OrbitControl from a complete distribution."
-        case .bridgeUnavailable:
+        case .serverUnavailable:
             return "Open Antelope Launcher, then use Reconnect."
         case .commandFailed:
             return "The device did not confirm the change. Check the connection before increasing volume."

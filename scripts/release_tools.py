@@ -48,30 +48,8 @@ def run_checked(command):
     return result.stdout.strip()
 
 
-def python_distribution_version(python, distribution):
-    code = "import importlib.metadata; print(importlib.metadata.version(%r))" % distribution
-    return run_checked([str(python), "-c", code])
-
-
-def verify_dependencies(manifest_path, python, package_resolved):
+def verify_dependencies(manifest_path, package_resolved):
     manifest = load_json(manifest_path)
-    actual_python = run_checked(
-        [str(python), "-c", "import platform; print(platform.python_version())"]
-    )
-    expected_python = manifest["python"]["version"]
-    if actual_python != expected_python:
-        raise ReleaseCheckError(
-            "Python version mismatch: expected %s, found %s"
-            % (expected_python, actual_python)
-        )
-
-    for name, expected in sorted(manifest["python"]["packages"].items()):
-        actual = python_distribution_version(python, name)
-        if actual != expected:
-            raise ReleaseCheckError(
-                "%s version mismatch: expected %s, found %s" % (name, expected, actual)
-            )
-
     for name, expected in sorted(manifest["homebrew"].items()):
         output = run_checked(["brew", "list", "--versions", name]).split()
         actual = output[1] if len(output) >= 2 else "missing"
@@ -147,8 +125,7 @@ def is_vendored_email_scope(root, path):
     relative = path.relative_to(root).as_posix()
     rooted = "/" + relative
     return (
-        "/Contents/Resources/python/" in rooted
-        or "/Contents/Resources/ThirdPartyLicenses/" in rooted
+        "/Contents/Resources/ThirdPartyLicenses/" in rooted
         or relative.startswith("ThirdPartyLicenses/")
     )
 
@@ -192,7 +169,6 @@ def parse_args():
 
     dependencies = subparsers.add_parser("verify-dependencies")
     dependencies.add_argument("--manifest", type=pathlib.Path, required=True)
-    dependencies.add_argument("--python", type=pathlib.Path, required=True)
     dependencies.add_argument("--package-resolved", type=pathlib.Path, required=True)
 
     sanitise = subparsers.add_parser("sanitise")
@@ -208,7 +184,7 @@ def main():
     args = parse_args()
     try:
         if args.command == "verify-dependencies":
-            verify_dependencies(args.manifest, args.python, args.package_resolved)
+            verify_dependencies(args.manifest, args.package_resolved)
         elif args.command == "sanitise":
             sanitise_home_paths(args.root)
         elif args.command == "audit":

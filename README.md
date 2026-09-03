@@ -5,7 +5,7 @@
 Adjust volume, mute, dim, mono, and output selection without keeping the Antelope Control Panel open.
 
 <p align="center">
-  <a href="https://github.com/mks-devx/MK-OrbitControl/releases/tag/v1.5.0"><img alt="Release v1.5.0 public beta" src="https://img.shields.io/badge/release-v1.5.0%20public%20beta-C61F2B"></a>
+  <a href="https://github.com/mks-devx/MK-OrbitControl/releases"><img alt="Latest public beta" src="https://img.shields.io/badge/release-public%20beta-C61F2B"></a>
   <a href="https://github.com/mks-devx/MK-OrbitControl/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/mks-devx/MK-OrbitControl/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/mks-devx/MK-OrbitControl/actions/workflows/codeql.yml"><img alt="CodeQL status" src="https://github.com/mks-devx/MK-OrbitControl/actions/workflows/codeql.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-2F3136"></a>
@@ -14,7 +14,7 @@ Adjust volume, mute, dim, mono, and output selection without keeping the Antelop
 </p>
 
 <p align="center">
-  <a href="https://github.com/mks-devx/MK-OrbitControl/releases/tag/v1.5.0"><strong>Download MK-OrbitControl v1.5.0</strong></a>
+  <a href="https://github.com/mks-devx/MK-OrbitControl/releases"><strong>Download the latest signed release</strong></a>
   ·
   <a href="docs/INSTALL.md">Installation guide</a>
   ·
@@ -28,7 +28,7 @@ Adjust volume, mute, dim, mono, and output selection without keeping the Antelop
 </p>
 
 > [!IMPORTANT]
-> v1.5.0 is a **public beta** for Apple Silicon Macs running macOS 13 or later. The DMG is Developer ID signed and Apple notarised. Hardware mappings remain experimental across the wider Synergy Core range, so begin testing at a low monitoring level.
+> MK-OrbitControl is a **public beta** for Apple Silicon Macs running macOS 13 or later. Official DMGs are Developer ID signed and Apple notarised. Hardware mappings remain experimental across the wider Synergy Core range, so begin testing at a low monitoring level.
 
 ## Why MK-OrbitControl
 
@@ -60,7 +60,7 @@ The current beta works on the maintainer's Synergy Core setup. That does **not**
 
 | Device | Current status |
 |---|---|
-| Orion Studio III (Synergy Core) | Previously tested; a controlled v1.5.0 regression pass is still requested |
+| Orion Studio III (Synergy Core) | Native transport tested on the maintainer's hardware; full release regression pending |
 | Discrete 4 / 8 | Connection investigation needed; currently reported offline |
 | Galaxy 32 / 64 | Unverified |
 | Orion 32+ Gen4 | Unverified |
@@ -71,18 +71,18 @@ If you test another model, please [open a compatibility report](https://github.c
 
 ## Install the public beta
 
-1. Download the DMG and its SHA-256 checksum from the [v1.5.0 release](https://github.com/mks-devx/MK-OrbitControl/releases/tag/v1.5.0).
+1. Download the latest DMG and its SHA-256 checksum from [GitHub Releases](https://github.com/mks-devx/MK-OrbitControl/releases).
 2. Optionally verify the download:
 
    ```bash
-   shasum -a 256 MK-OrbitControl-v1.5.0.dmg
+   shasum -a 256 MK-OrbitControl-vX.Y.Z.dmg
    ```
 
 3. Open the DMG and drag **MK-OrbitControl.app** to **Applications**.
-4. Launch the app. If prompted, click **Run Setup**.
+4. Launch the app.
 5. Confirm that the speaker icon appears in the macOS menu bar.
 
-First-run setup extracts the required compatibility modules from the Antelope software already installed on the Mac. Proprietary Antelope code is neither included in the repository nor downloaded by MK-OrbitControl.
+MK-OrbitControl communicates with the local device service using an independently implemented, narrowly scoped protocol client. It does not copy, extract, bundle, or load Antelope executable code.
 
 Only download release packages from this repository. Do not install app bundles or DMGs shared through issues, forks, email, or third-party links. For checksum verification and first-run troubleshooting, see the [complete installation guide](docs/INSTALL.md).
 
@@ -111,14 +111,15 @@ Check these in order:
 4. If it remains offline, use **Restart Server** and allow the app to reconnect.
 5. If your model has not been validated, [report the result](https://github.com/mks-devx/MK-OrbitControl/issues) rather than repeatedly changing outputs at an audible level.
 
-If setup reports that Antelope software is missing, install and open Antelope Launcher once, then run setup again. Do not disable Gatekeeper for an official release; redownload the DMG, verify its checksum, and report a persistent signing error. More detail is available in [docs/INSTALL.md](docs/INSTALL.md).
+If the service remains unavailable, install and open Antelope Launcher once, then reconnect. Do not disable Gatekeeper for an official release; redownload the DMG, verify its checksum, and report a persistent signing error. More detail is available in [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Security and safety model
 
-- The command bridge binds only to `127.0.0.1` and requires a random per-install authentication token.
+- Device communication is direct from the user-level application to an Antelope service already running on `127.0.0.1`.
 - Commands are restricted to validated monitor actions and bounded volume values.
 - The app remains silent until it receives a valid initial device state.
 - No privileged helper, launch daemon, analytics service, or cloud account is installed by MK-OrbitControl.
+- No Antelope executable code is copied, extracted, bundled, or loaded.
 - Release packaging audits the app for private paths, personal email addresses, credential-like content, dependency drift, and required third-party licences.
 
 Audio hardware is still the final authority. Keep physical monitor controls accessible and begin at a conservative level when testing an unverified device or output mapping.
@@ -128,23 +129,21 @@ Please report security issues privately using the process in [SECURITY.md](SECUR
 ## How it works
 
 ```text
-┌──────────────────┐   authenticated TCP    ┌────────────────┐   device API    ┌──────────────────────┐
-│ MK-OrbitControl  │ ─── 127.0.0.1:17580 ─► │ Local bridge   │ ──────────────► │ AntelopeAudioServer  │
-│ SwiftUI menu app │                        │ Python 3.8      │                 │ local dynamic port   │
-└──────────────────┘                        └────────────────┘                 └──────────┬───────────┘
-                                                                                       │ Thunderbolt
-                                                                                       ▼
-                                                                                Synergy Core hardware
+┌──────────────────┐   length-prefixed JSON   ┌──────────────────────┐
+│ MK-OrbitControl  │ ─────── 127.0.0.1 ─────► │ AntelopeAudioServer  │
+│ SwiftUI menu app │                          │ local dynamic port   │
+└──────────────────┘                          └──────────┬───────────┘
+                                                       │ Thunderbolt
+                                                       ▼
+                                                Synergy Core hardware
 ```
 
-The local bridge exists because the installed Antelope modules currently require Python 3.8 bytecode compatibility. Python 3.8 is end-of-life, so replacing this layer remains an important long-term hardening goal.
-
-The device protocol was reverse engineered solely for interoperability. MK-OrbitControl is not affiliated with, endorsed by, or supported by Antelope Audio.
+The native protocol client was independently implemented from observed local request/response behaviour solely for interoperability. See [INTEROPERABILITY.md](docs/INTEROPERABILITY.md) for scope and provenance. MK-OrbitControl is not affiliated with, endorsed by, or supported by Antelope Audio.
 
 <details>
 <summary><strong>Protocol and channel reference</strong></summary>
 
-The bridge uses length-prefixed JSON messages and exposes only these commands:
+The app uses length-prefixed JSON messages and exposes only these commands:
 
 | Command | Parameters |
 |---|---|
@@ -163,28 +162,25 @@ Volume values are inverted: `0` is 0 dB, `95` is −95 dB, and `96` is −∞. T
 
 - Xcode and its command-line tools
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen)
-- Python 3.8.20 with `zeroconf` and `netifaces`
-- Antelope Launcher for local module extraction and hardware testing
+- Antelope Launcher and supported hardware for integration testing
 
 ```bash
 git clone https://github.com/mks-devx/MK-OrbitControl.git
 cd MK-OrbitControl
 
-brew install xcodegen pyenv
-pyenv install 3.8.20
-"$HOME/.pyenv/versions/3.8.20/bin/python3.8" -m pip install zeroconf netifaces
+brew install xcodegen
 
 xcodegen generate --spec project.yml
-bash setup.sh
 swift test
-python3 -m unittest discover -s Tests -p 'test_*.py'
+python3 -m unittest discover -s Tests/ReleaseTests -p 'test_*.py'
+bash scripts/interoperability-audit.sh
 bash scripts/privacy-audit.sh
 ```
 
 To build an unsigned local audit package:
 
 ```bash
-ALLOW_UNTAGGED_BUILD=1 ALLOW_DIRTY_BUILD=1 bash build-dist.sh
+ALLOW_UNTAGGED_BUILD=1 ALLOW_DIRTY_BUILD=1 UNRELEASED_VERSION=1.6.0 bash build-dist.sh
 ```
 
 Public packages must come from a clean checkout at an annotated `vX.Y.Z` tag. Developer ID distribution also requires a valid signing identity and Apple notarisation profile. The packaging script rejects an unnotarised Developer ID build.
@@ -194,12 +190,9 @@ Public packages must come from a clean checkout at an annotated `vX.Y.Z` tag. De
 ```text
 Config/                         App metadata and canonical artwork
 Sources/MKOrbitControl/         Swift application source
-Tests/                          Swift and Python regression tests
+Tests/                          Swift and release-tool regression tests
 docs/                           Installation and design documentation
-licenses/                       Third-party licence texts
 scripts/                        Build, release, and privacy validation
-bridge.py                       Authenticated local command bridge
-setup.sh                        Local Antelope module extraction
 build-dist.sh                   Reproducible app and DMG packaging
 ```
 
@@ -216,9 +209,13 @@ Focused contributions are welcome, especially:
 
 Before submitting a change, read [SECURITY.md](SECURITY.md), follow the established [design direction](docs/DESIGN.md), run the test and privacy commands above, and avoid posting logs that contain personal paths, email addresses, serial numbers, tokens, or account data.
 
+All contributions must also follow [CONTRIBUTING.md](CONTRIBUTING.md), including the native interoperability and publication-provenance requirements.
+
 ## Release history
 
-**v1.5.0** is the first signed and Apple-notarised public beta. It introduced authenticated local bridge access, hardened connection recovery, improved output controls and appearance options, removed the discontinued widget experiment, and added release privacy checks plus Swift, Python, and CodeQL validation.
+**v1.6.0** replaces the compatibility-module bridge with an independently implemented native Swift client, removes the setup step and bundled Python runtime, narrows the command surface, and adds interoperability regression checks.
+
+**v1.5.0** was the first signed and Apple-notarised public beta. It added connection recovery, output controls, appearance options, and release privacy checks. It is superseded by the native architecture and should no longer be distributed after v1.6.0 is published.
 
 See [GitHub Releases](https://github.com/mks-devx/MK-OrbitControl/releases) for downloads, checksums, and release notes.
 
