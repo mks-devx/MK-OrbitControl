@@ -11,10 +11,16 @@ final class AntelopeCommander {
         case setMono = "set_mono"
     }
 
-    private enum AttemptResult {
+    enum AttemptResult: Equatable {
         case noService
         case commandUnconfirmed
         case confirmed
+    }
+
+    enum RetryDisposition: Equatable {
+        case continueDiscovery
+        case fail
+        case succeed
     }
 
     private struct PendingVolume {
@@ -161,19 +167,24 @@ final class AntelopeCommander {
             case .commandUnconfirmed:
                 // Set operations are idempotent. One fresh connection handles a
                 // short server state race without masking persistent failures.
-                if case .confirmed = attempt(
+                let retryResult = attempt(
                     command,
                     channel: channel,
                     value: value,
                     port: port
-                ) {
+                )
+                switch Self.retryDisposition(for: retryResult) {
+                case .continueDiscovery:
+                    continue
+                case .succeed:
                     portLock.withCriticalSection { preferredPort = port }
                     publishStatus(.ready)
                     return true
+                case .fail:
+                    portLock.withCriticalSection { preferredPort = nil }
+                    publishStatus(.commandFailed)
+                    return false
                 }
-                portLock.withCriticalSection { preferredPort = nil }
-                publishStatus(.commandFailed)
-                return false
             case .confirmed:
                 portLock.withCriticalSection { preferredPort = port }
                 publishStatus(.ready)
@@ -184,6 +195,14 @@ final class AntelopeCommander {
         portLock.withCriticalSection { preferredPort = nil }
         publishStatus(.serverUnavailable)
         return false
+    }
+
+    static func retryDisposition(for result: AttemptResult) -> RetryDisposition {
+        switch result {
+        case .noService: return .continueDiscovery
+        case .commandUnconfirmed: return .fail
+        case .confirmed: return .succeed
+        }
     }
 
     private func attempt(

@@ -206,6 +206,21 @@ final class ControlCoreTests: XCTestCase {
         )
     }
 
+    func testNativeCommandRetryContinuesDiscoveryWhenEndpointMoves() {
+        XCTAssertEqual(
+            AntelopeCommander.retryDisposition(for: .noService),
+            .continueDiscovery
+        )
+        XCTAssertEqual(
+            AntelopeCommander.retryDisposition(for: .commandUnconfirmed),
+            .fail
+        )
+        XCTAssertEqual(
+            AntelopeCommander.retryDisposition(for: .confirmed),
+            .succeed
+        )
+    }
+
     func testAppearanceSurfaceAndTransparencyPersistSafely() throws {
         let suiteName = "ControlCoreTests.Theme.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
