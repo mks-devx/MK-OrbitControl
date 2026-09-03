@@ -37,7 +37,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateReader = reader
         deviceState.stateReader = reader
         reader.start()
-        commander.startDaemon()
         midiManager = MIDIManager(commander: commander, deviceState: deviceState)
         UpdateChecker.shared.checkOnLaunch()
 
@@ -139,7 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func recoverConnections() {
         stateReader?.reconnect()
-        commander.restartDaemon()
+        commander.resetConnection()
     }
 
     // MARK: - Toggle Popover
@@ -218,7 +217,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         stateReader?.stop()
-        commander.stopDaemon()
         hotkeyManager?.unregisterAll()
         if let monitor = eventMonitor { NSEvent.removeMonitor(monitor) }
         if let observer = settingsCloseObserver { NotificationCenter.default.removeObserver(observer) }

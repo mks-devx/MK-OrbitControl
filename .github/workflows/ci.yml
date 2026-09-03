@@ -34,14 +34,17 @@ jobs:
       - name: Run Swift tests
         run: swift test --scratch-path "$RUNNER_TEMP/MKOrbitControl-SwiftPM"
 
-      - name: Run bridge tests
-        run: python3 -m unittest discover -s Tests/BridgeTests -v
+      - name: Run release-tool tests
+        run: python3 -m unittest discover -s Tests/ReleaseTests -v
 
       - name: Validate scripts and Python syntax
         run: |
-          bash -n setup.sh build-dist.sh scripts/privacy-audit.sh
-          python3 -m compileall -q bridge.py scripts/release_tools.py Tests/BridgeTests
+          bash -n build-dist.sh scripts/privacy-audit.sh scripts/interoperability-audit.sh
+          python3 -m compileall -q scripts/release_tools.py Tests/ReleaseTests
           python3 -m json.tool Config/release-dependencies.json >/dev/null
+
+      - name: Enforce native interoperability boundary
+        run: bash scripts/interoperability-audit.sh
 
       - name: Audit public history for private data
         run: bash scripts/privacy-audit.sh

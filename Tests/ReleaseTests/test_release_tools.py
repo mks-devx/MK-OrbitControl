@@ -74,16 +74,19 @@ class ReleaseToolsTests(unittest.TestCase):
             (root / "licence.txt").write_bytes(address)
             TOOLS.audit_artifact(root, [])
 
-    def test_artifact_audit_allows_vendored_consumer_email(self):
+    def test_artifact_audit_rejects_consumer_email_in_python_resource(self):
         with tempfile.TemporaryDirectory() as temporary_root:
             root = pathlib.Path(temporary_root)
             source = root / "Contents" / "Resources" / "python" / "module.py"
             source.parent.mkdir(parents=True)
             address = b"upstream.author" + b"@" + b"gmail.com"
             source.write_bytes(address)
-            TOOLS.audit_artifact(root, [])
+            with self.assertRaisesRegex(
+                TOOLS.ReleaseCheckError, "personal email address"
+            ):
+                TOOLS.audit_artifact(root, [])
 
-    def test_artifact_audit_allows_vendored_email_in_nested_app(self):
+    def test_artifact_audit_allows_licence_email_in_nested_app(self):
         with tempfile.TemporaryDirectory() as temporary_root:
             root = pathlib.Path(temporary_root)
             source = (
@@ -91,8 +94,8 @@ class ReleaseToolsTests(unittest.TestCase):
                 / "Product.app"
                 / "Contents"
                 / "Resources"
-                / "python"
-                / "module.py"
+                / "ThirdPartyLicenses"
+                / "Upstream.txt"
             )
             source.parent.mkdir(parents=True)
             address = b"upstream.author" + b"@" + b"gmail.com"

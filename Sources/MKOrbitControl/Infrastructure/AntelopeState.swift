@@ -7,6 +7,10 @@ private struct CyclicMessage: Decodable {
     let contents: CyclicContents?
 }
 
+private struct MessageEnvelope: Decodable {
+    let type: String
+}
+
 private struct CyclicContents: Decodable {
     let volumes_and_mutes: [ChannelEntry]
     let peaks_meters: [Int]?
@@ -40,8 +44,71 @@ enum AntelopeProtocol {
     }
 
     static func isCyclicPayload(_ payload: [UInt8]) -> Bool {
-        guard let text = String(bytes: payload, encoding: .utf8) else { return false }
-        return text.contains("\"type\": \"cyclic\"") || text.contains("\"type\":\"cyclic\"")
+        guard let data = jsonObjectData(payload) else { return false }
+        return (try? JSONDecoder().decode(MessageEnvelope.self, from: data))?.type == "cyclic"
+    }
+
+    static func confirmsMonitorCommand(
+        _ payload: [UInt8],
+        command: String,
+        channel: Int,
+        value: Int
+    ) -> Bool {
+        guard let message = decodeCyclicMessage(payload),
+              message.type == "cyclic",
+              let contents = message.contents,
+              contents.volumes_and_mutes.indices.contains(channel) else {
+            return false
+        }
+
+        let state = contents.volumes_and_mutes[channel]
+        switch command {
+        case "set_volume": return state.volume == value
+        case "set_mute": return state.mute == value
+        case "set_dim": return state.dim == value
+        case "set_mono": return state.mono == value
+        default: return false
+        }
+    }
+
+    fileprivate static func decodeCyclicMessage(_ payload: [UInt8]) -> CyclicMessage? {
+        guard let data = jsonObjectData(payload) else { return nil }
+        return try? JSONDecoder().decode(CyclicMessage.self, from: data)
+    }
+
+    private static func jsonObjectData(_ payload: [UInt8]) -> Data? {
+        var depth = 0
+        var jsonEnd = 0
+        var inString = false
+        var escaped = false
+
+        for (index, byte) in payload.enumerated() {
+            if inString {
+                if escaped {
+                    escaped = false
+                } else if byte == UInt8(ascii: "\\") {
+                    escaped = true
+                } else if byte == UInt8(ascii: "\"") {
+                    inString = false
+                }
+                continue
+            }
+
+            if byte == UInt8(ascii: "\"") {
+                inString = true
+            } else if byte == UInt8(ascii: "{") {
+                depth += 1
+            } else if byte == UInt8(ascii: "}") {
+                depth -= 1
+                if depth == 0 {
+                    jsonEnd = index + 1
+                    break
+                }
+            }
+        }
+
+        guard jsonEnd > 0 else { return nil }
+        return Data(payload[0..<jsonEnd])
     }
 }
 
@@ -136,36 +203,6 @@ final class AntelopeStateReader {
 
     // MARK: - Find device server port and connect
 
-    // Load the newest installed report format once for the init handshake.
-    private static let reportFormatJSON: String? = {
-        let fileManager = FileManager.default
-        let base = URL(fileURLWithPath: "/Users/Shared/.AntelopeAudio", isDirectory: true)
-        guard let deviceDirectories = try? fileManager.contentsOfDirectory(
-            at: base,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles]
-        ) else { return nil }
-
-        let candidates = deviceDirectories.flatMap { deviceURL -> [URL] in
-            let panelsURL = deviceURL.appendingPathComponent("panels", isDirectory: true)
-            return (try? fileManager.contentsOfDirectory(
-                at: panelsURL,
-                includingPropertiesForKeys: nil,
-                options: [.skipsHiddenFiles]
-            ))?.filter { $0.lastPathComponent.hasPrefix("report_format_") } ?? []
-        }.sorted {
-            $0.lastPathComponent.compare(
-                $1.lastPathComponent,
-                options: [.numeric, .caseInsensitive]
-            ) == .orderedDescending
-        }
-
-        guard let path = candidates.first,
-              let data = try? Data(contentsOf: path),
-              let str = String(data: data, encoding: .utf8) else { return nil }
-        return str
-    }()
-
     private func findAndConnect() -> Int32 {
         let hosts = ["127.0.0.1"]
         for host in hosts {
@@ -175,9 +212,6 @@ final class AntelopeStateReader {
 
                 var tv = timeval(tv_sec: 5, tv_usec: 0)
                 setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
-
-                // Send initialize_format to trigger cyclic data
-                sendInitFormat(fd: fd)
 
                 // Read first message
                 guard let payload = readOneMessage(fd: fd) else {
@@ -194,18 +228,6 @@ final class AntelopeStateReader {
             }
         }
         return -1
-    }
-
-    /// Send initialize_format command so the server starts sending cyclic reports
-    private func sendInitFormat(fd: Int32) {
-        guard let rfJSON = Self.reportFormatJSON else { return }
-        let cmd = "[\"initialize_format\",[\(rfJSON)],{}]"
-        guard let data = cmd.data(using: .utf8) else { return }
-        guard var len = AntelopeProtocol.totalFrameLength(payloadLength: data.count)?.bigEndian else {
-            return
-        }
-        guard withUnsafeBytes(of: &len, { sendAll(fd: fd, bytes: $0) }) else { return }
-        _ = data.withUnsafeBytes { sendAll(fd: fd, bytes: $0) }
     }
 
     // MARK: - Read one length-prefixed message
@@ -229,20 +251,7 @@ final class AntelopeStateReader {
     // MARK: - JSON parsing
 
     private func parseAndApply(payload: [UInt8]) {
-        // Find JSON boundary
-        var depth = 0
-        var jsonEnd = 0
-        for (i, byte) in payload.enumerated() {
-            if byte == UInt8(ascii: "{") { depth += 1 }
-            else if byte == UInt8(ascii: "}") {
-                depth -= 1
-                if depth == 0 { jsonEnd = i + 1; break }
-            }
-        }
-        guard jsonEnd > 0 else { return }
-
-        let jsonData = Data(payload[0..<jsonEnd])
-        guard let msg = try? JSONDecoder().decode(CyclicMessage.self, from: jsonData),
+        guard let msg = AntelopeProtocol.decodeCyclicMessage(payload),
               msg.type == "cyclic",
               let contents = msg.contents else { return }
 
@@ -338,18 +347,6 @@ final class AntelopeStateReader {
             if n < 0, errno == EINTR { continue }
             if n <= 0 { return false }
             got += n
-        }
-        return true
-    }
-
-    private func sendAll(fd: Int32, bytes: UnsafeRawBufferPointer) -> Bool {
-        guard let baseAddress = bytes.baseAddress else { return bytes.isEmpty }
-        var sent = 0
-        while sent < bytes.count {
-            let count = send(fd, baseAddress.advanced(by: sent), bytes.count - sent, 0)
-            if count < 0, errno == EINTR { continue }
-            if count <= 0 { return false }
-            sent += count
         }
         return true
     }

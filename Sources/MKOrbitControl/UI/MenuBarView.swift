@@ -101,7 +101,6 @@ struct MenuBarView: View {
     @State private var isUserDragging: Bool = false
     @State private var pendingSentValue: Int? = nil
     @State private var knobDragStart: Double = 0
-    @State private var isRunningSetup = false
     @FocusState private var volumeControlFocused: Bool
 
     // Volume mapping
@@ -679,15 +678,6 @@ struct MenuBarView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
-            if deviceState.controlAvailability == .missingModules {
-                Button(isRunningSetup ? "Setting up…" : "Run Setup") {
-                    isRunningSetup = true
-                    commander.installModules { _ in isRunningSetup = false }
-                }
-                .controlSize(.small)
-                .disabled(isRunningSetup)
-                .accessibilityHint("Extracts required control modules from the installed Antelope software")
-            }
         }
         .padding(10)
         .background(t.textPrimary.opacity(0.07))

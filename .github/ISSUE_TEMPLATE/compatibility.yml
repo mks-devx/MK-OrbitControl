@@ -1,0 +1,48 @@
+name: Device compatibility report
+description: Report connection, mapping, or monitor-control behaviour on a Synergy Core device.
+title: "[Compatibility]: "
+labels:
+  - compatibility
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include serial numbers, account details, personal paths, credentials, private logs, proprietary files, extracted modules, or third-party diagnostic archives.
+  - type: input
+    id: device
+    attributes:
+      label: Device model
+      placeholder: Orion Studio III
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: 15.6
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection
+      options:
+        - Thunderbolt
+        - USB
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: behaviour
+    attributes:
+      label: Observed behaviour
+      description: Describe connection state, tested outputs, commands, and expected result using non-identifying information only.
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Safety and privacy confirmation
+      options:
+        - label: I tested at a conservative monitor level and removed personal, device-identifying, and proprietary information.
+          required: true

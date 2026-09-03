@@ -131,11 +131,79 @@ final class ControlCoreTests: XCTestCase {
         XCTAssertFalse(AntelopeProtocol.isCyclicPayload(Array(#"{"type": "notification"}"#.utf8)))
     }
 
+    func testCyclicGreetingAcceptsArbitraryJSONWhitespaceAndPadding() {
+        let greeting = Array("{\n  \"type\" :\t\"cyclic\",\n  \"contents\" : {}\n}\u{0}\u{0}".utf8)
+        XCTAssertTrue(AntelopeProtocol.isCyclicPayload(greeting))
+    }
+
     func testAntelopeFrameLengthIncludesHeader() {
         XCTAssertEqual(AntelopeProtocol.payloadLength(totalFrameLength: 118), 114)
         XCTAssertEqual(AntelopeProtocol.totalFrameLength(payloadLength: 114), 118)
         XCTAssertNil(AntelopeProtocol.payloadLength(totalFrameLength: 4))
         XCTAssertNil(AntelopeProtocol.totalFrameLength(payloadLength: 0))
+    }
+
+    func testNativeMonitorCommandFrameIsLengthPrefixedAndRestricted() throws {
+        let frame = try XCTUnwrap(
+            AntelopeCommander.commandFrame(.setVolume, channel: 0, value: 44)
+        )
+        XCTAssertGreaterThan(frame.count, AntelopeProtocol.headerSize)
+
+        let header = [UInt8](frame.prefix(AntelopeProtocol.headerSize))
+        let declaredLength = Int(
+            UInt32(header[0]) << 24
+                | UInt32(header[1]) << 16
+                | UInt32(header[2]) << 8
+                | UInt32(header[3])
+        )
+        XCTAssertEqual(declaredLength, frame.count)
+        XCTAssertEqual(
+            String(data: frame.dropFirst(AntelopeProtocol.headerSize), encoding: .utf8),
+            #"["set_volume",[0,44],{}]"#
+        )
+
+        XCTAssertNil(AntelopeCommander.commandFrame(.setVolume, channel: 3, value: 44))
+        XCTAssertNil(AntelopeCommander.commandFrame(.setVolume, channel: 0, value: 97))
+        XCTAssertNil(AntelopeCommander.commandFrame(.setMute, channel: 0, value: 2))
+    }
+
+    func testNativeMonitorCommandRequiresMatchingCyclicConfirmation() {
+        let payload = Array(
+            #"{"type":"cyclic","contents":{"volumes_and_mutes":[{"volume":44,"mute":0,"dim":1,"mono":0}],"peaks_meters":[]}}"#.utf8
+        )
+
+        XCTAssertTrue(
+            AntelopeProtocol.confirmsMonitorCommand(
+                payload,
+                command: "set_volume",
+                channel: 0,
+                value: 44
+            )
+        )
+        XCTAssertTrue(
+            AntelopeProtocol.confirmsMonitorCommand(
+                payload,
+                command: "set_dim",
+                channel: 0,
+                value: 1
+            )
+        )
+        XCTAssertFalse(
+            AntelopeProtocol.confirmsMonitorCommand(
+                payload,
+                command: "set_volume",
+                channel: 0,
+                value: 45
+            )
+        )
+        XCTAssertFalse(
+            AntelopeProtocol.confirmsMonitorCommand(
+                payload,
+                command: "set_volume",
+                channel: 5,
+                value: 44
+            )
+        )
     }
 
     func testAppearanceSurfaceAndTransparencyPersistSafely() throws {
