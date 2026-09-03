@@ -2,7 +2,7 @@ import XCTest
 @testable import MKOrbitControl
 
 final class HardwareIntegrationTests: XCTestCase {
-    func testNativeNoOpCommandsAgainstConnectedHardware() throws {
+    func testNativeCommandsAgainstConnectedHardwareAtSaferLevel() throws {
         guard ProcessInfo.processInfo.environment["MK_ORBIT_HARDWARE_TEST"] == "1" else {
             throw XCTSkip("Set MK_ORBIT_HARDWARE_TEST=1 for the controlled hardware test.")
         }
@@ -23,9 +23,34 @@ final class HardwareIntegrationTests: XCTestCase {
             XCTFail("MON A state is unavailable.")
             return
         }
+        guard original.volume < VolumeScale.maximumRaw else {
+            throw XCTSkip("MON A is already silent; no quieter mutation is available.")
+        }
 
         let commander = AntelopeCommander()
-        XCTAssertTrue(waitForCommand { commander.setVolume(channel: channel, value: original.volume, completion: $0) })
+        defer {
+            XCTAssertTrue(
+                waitForCommand {
+                    commander.setVolume(
+                        channel: channel,
+                        value: original.volume,
+                        completion: $0
+                    )
+                },
+                "Could not restore the original MON A volume."
+            )
+            XCTAssertTrue(
+                waitUntil(timeout: 5) { state.channels[channel]?.volume == original.volume },
+                "The restored MON A volume was not observed."
+            )
+        }
+
+        let saferVolume = original.volume + 1
+        XCTAssertTrue(waitForCommand { commander.setVolume(channel: channel, value: saferVolume, completion: $0) })
+        XCTAssertTrue(
+            waitUntil(timeout: 5) { state.channels[channel]?.volume == saferVolume },
+            "The 1 dB quieter MON A value was not observed."
+        )
         XCTAssertTrue(waitForCommand { commander.setMute(channel: channel, muted: original.mute, completion: $0) })
         XCTAssertTrue(waitForCommand { commander.setDim(channel: channel, dimmed: original.dim, completion: $0) })
         XCTAssertTrue(waitForCommand { commander.setMono(channel: channel, mono: original.mono, completion: $0) })
