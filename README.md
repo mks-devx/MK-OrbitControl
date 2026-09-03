@@ -1,431 +1,237 @@
 # MK-OrbitControl
 
-> Experimental macOS menu bar monitor controller for selected Antelope Synergy Core audio interfaces.
+**Fast monitor control for Antelope Synergy Core interfaces, directly from the macOS menu bar.**
 
-Control volume, mute, dim, mono, and output selection directly from your macOS menu bar — without opening the Antelope Control Panel.
+Adjust volume, mute, dim, mono, and output selection without keeping the Antelope Control Panel open.
 
 <p align="center">
-  <img src="screenshots/main.png" alt="MK-OrbitControl" width="240">
-  &nbsp;&nbsp;&nbsp;
-  <img src="screenshots/mini.png" alt="Mini Mode" width="200">
+  <a href="https://github.com/mks-devx/MK-OrbitControl/releases/tag/v1.5.0"><img alt="Release v1.5.0 public beta" src="https://img.shields.io/badge/release-v1.5.0%20public%20beta-C61F2B"></a>
+  <a href="https://github.com/mks-devx/MK-OrbitControl/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/mks-devx/MK-OrbitControl/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/mks-devx/MK-OrbitControl/actions/workflows/codeql.yml"><img alt="CodeQL status" src="https://github.com/mks-devx/MK-OrbitControl/actions/workflows/codeql.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-2F3136"></a>
+  <img alt="macOS 13 or later" src="https://img.shields.io/badge/macOS-13%2B-2F3136">
+  <img alt="Apple Silicon" src="https://img.shields.io/badge/Apple%20Silicon-required-2F3136">
 </p>
-<p align="center"><sub>Crimson theme · Full controller · Mini mode</sub></p>
 
----
+<p align="center">
+  <a href="https://github.com/mks-devx/MK-OrbitControl/releases/tag/v1.5.0"><strong>Download MK-OrbitControl v1.5.0</strong></a>
+  ·
+  <a href="docs/INSTALL.md">Installation guide</a>
+  ·
+  <a href="https://github.com/mks-devx/MK-OrbitControl/issues">Report compatibility</a>
+</p>
 
-## Table of Contents
+<p align="center">
+  <img src="screenshots/main.png" alt="MK-OrbitControl full controller in the Crimson theme" width="360">
+  &nbsp;&nbsp;&nbsp;
+  <img src="screenshots/mini.png" alt="MK-OrbitControl Mini mode" width="250">
+</p>
 
-- [Features](#features)
-- [Compatibility](#compatibility)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Troubleshooting](#troubleshooting)
-- [Architecture](#architecture)
-- [Repository Structure](#repository-structure)
-- [Build from Source](#build-from-source)
-- [Uninstall](#uninstall)
-- [Contributing](#contributing)
-- [Changelog](#changelog)
-- [License](#license)
+> [!IMPORTANT]
+> v1.5.0 is a **public beta** for Apple Silicon Macs running macOS 13 or later. The DMG is Developer ID signed and Apple notarised. Hardware mappings remain experimental across the wider Synergy Core range, so begin testing at a low monitoring level.
 
----
+## Why MK-OrbitControl
+
+Monitor level is one of the most frequently used controls in a studio. MK-OrbitControl keeps that control immediate and unobtrusive: one menu-bar click, a global shortcut, or a MIDI control is enough. It complements the official Antelope software; it does not replace device setup, routing, or firmware management.
 
 ## Features
 
-### Volume Control
-- **Rotary knob** with precise dB display (-∞ to 0 dB)
-- **Slider** for quick adjustments
-- **Step buttons** for immediate quieter/louder changes without dragging
-- **Configurable 1, 2, 3, or 6 dB step** shared by buttons, arrow keys, VoiceOver, and global hotkeys
-- **DIM** — reduce volume by a fixed amount for quick conversations
-- **MUTE** — instant silence with visual feedback
-- **MONO** — collapse stereo to mono for mix checking
-
-### Output Management
-- **A/B monitor switching** — toggle between two monitor outputs
-- **4 preset slots** — right-click to save, click to recall the selected output's saved state
-- **Night mode** — configurable, persistent volume cap for late-night sessions
-
-### Metering
-- **Peak meters** with peak hold indicators (L/R channels)
-- Color-coded levels: green → yellow → red
-- ~3 fps update rate (limited by Antelope server's cyclic report interval)
-
-### Display Modes
-| Mode | Description |
-|------|-------------|
-| **Menu bar popover** | Default — full controls in a popover from the menu bar icon |
-| **Mini mode** | Compact view with slider, mute, and output selector |
-| **Floating window** | Always-on-top, draggable — position anywhere on screen |
-
-### Customization
-- **12 themes** — Crimson, Midnight, Cyber, Diablo, Nova, Aether, Flux, and more
-- **Font choices** — built-in macOS fonts plus compatible optional fonts already installed on the Mac
-- **9 menu bar icons** — choose the icon that fits your menu bar style
-- **Settings panel** — native tabbed sidebar that follows the selected light or dark theme
-
-### Integration
-- **Global hotkeys** — configurable per output, works from any app (Carbon-based via HotKey library)
-- **MIDI learn** — map any MIDI CC to volume or mute (CoreMIDI)
-- **Volume HUD** — on-screen overlay when adjusting volume via hotkeys
-- **Auto update checker** — notifies when a downloadable GitHub Release is available
-
-### Reliability
-- **Auto-reconnect** — if the connection to the Antelope server drops after extended uptime, the bridge automatically recovers without manual restart
-- **Reconnect button** — force an immediate device re-scan after cable disconnect
-- **Restart Server** — one-click server restart when offline (relaunches Antelope Launcher, auto-reconnects)
-
----
+| Area | Capabilities |
+|---|---|
+| **Monitor control** | Rotary control, fast slider, configurable 1/2/3/6 dB steps, mute, dim, and mono |
+| **Outputs** | MON A, MON B, HP 1, and HP 2 selection, plus four output-aware preset slots |
+| **Fast access** | Configurable global hotkeys, MIDI learn, and an on-screen volume HUD |
+| **Display** | Full menu-bar controller, compact Mini mode, and an always-on-top floating window |
+| **Metering** | Stereo peak meters with peak hold and level colouring |
+| **Appearance** | Multiple themes, Liquid Glass styling, font and menu-bar icon choices, and adjustable background transparency |
+| **Protection** | Persistent Night mode volume cap and silence-first startup until valid device state arrives |
+| **Recovery** | Automatic reconnection, manual re-scan, and one-click Antelope server restart when offline |
 
 ## Compatibility
 
 ### Requirements
 
-- **macOS 13+**
-- **Apple Silicon Mac**; Intel packaging is not currently supported or validated
-- **Antelope Launcher** installed and running ([download](https://www.antelopeaudio.com/downloads/))
-- **A supported Synergy Core device** connected via Thunderbolt; verify the mapping table below before testing
+- macOS 13 or later
+- Apple Silicon Mac; Intel builds are not currently distributed or validated
+- [Antelope Launcher](https://www.antelopeaudio.com/downloads/) installed and opened at least once
+- A connected Antelope Synergy Core interface
 
-### Tested Devices
+The current beta works on the maintainer's Synergy Core setup. That does **not** establish compatibility with every model: Antelope devices can expose different channel mappings and report formats.
 
-| Device | Status | Notes |
-|--------|--------|-------|
-| Orion Studio III (Synergy Core) | Regression test required | Previously tested; the hardened command path still needs a controlled hardware pass |
-| Discrete 4 / 8 | Community testing | Shows offline — debug data needed |
-| Galaxy 32 / 64 | Unverified | Channel mapping and report format must be validated |
-| Orion 32+ Gen4 | Unverified | Channel mapping and report format must be validated |
-| Zen Tour Synergy Core | Unverified | Channel mapping and report format must be validated |
-| Goliath | Unverified | Channel mapping and report format must be validated |
+| Device | Current status |
+|---|---|
+| Orion Studio III (Synergy Core) | Previously tested; a controlled v1.5.0 regression pass is still requested |
+| Discrete 4 / 8 | Connection investigation needed; currently reported offline |
+| Galaxy 32 / 64 | Unverified |
+| Orion 32+ Gen4 | Unverified |
+| Zen Tour Synergy Core | Unverified |
+| Goliath | Unverified |
 
-Have a Synergy Core device not listed here? [Test and report your results](../../issues) — community testing welcome.
+If you test another model, please [open a compatibility report](https://github.com/mks-devx/MK-OrbitControl/issues) with the device model, macOS version, connection type, and observed output mapping. Do not include serial numbers, account details, or other private data.
 
----
+## Install the public beta
 
-## Installation
+1. Download the DMG and its SHA-256 checksum from the [v1.5.0 release](https://github.com/mks-devx/MK-OrbitControl/releases/tag/v1.5.0).
+2. Optionally verify the download:
 
-### Current availability
+   ```bash
+   shasum -a 256 MK-OrbitControl-v1.5.0.dmg
+   ```
 
-The official Apple Silicon public beta is distributed only through the [GitHub Releases page](../../releases). Release DMGs are Developer ID signed, notarised by Apple, and published with a SHA-256 checksum.
+3. Open the DMG and drag **MK-OrbitControl.app** to **Applications**.
+4. Launch the app. If prompted, click **Run Setup**.
+5. Confirm that the speaker icon appears in the macOS menu bar.
 
-Do not download application bundles or DMGs offered through issues, forks, or third-party links. Developers can also use the [Build from Source](#build-from-source) instructions below.
+First-run setup extracts the required compatibility modules from the Antelope software already installed on the Mac. Proprietary Antelope code is neither included in the repository nor downloaded by MK-OrbitControl.
 
-### Signed release installation
+Only download release packages from this repository. Do not install app bundles or DMGs shared through issues, forks, email, or third-party links. For checksum verification and first-run troubleshooting, see the [complete installation guide](docs/INSTALL.md).
 
-Use these steps for the official notarised DMG.
+## Use it
 
-### Step 1: Download
+| Action | Control |
+|---|---|
+| Open the controller | Click the menu-bar icon |
+| Adjust volume | Drag the knob or slider; use −/+ for repeatable steps |
+| Toggle monitor functions | Click DIM, MUTE, or MONO |
+| Change output | Select MON A, MON B, HP 1, or HP 2 |
+| Recall a preset | Click A–D |
+| Save a preset | Right-click A–D |
+| Configure shortcuts or MIDI | Open Settings → Hotkeys or Settings → MIDI |
+| Change the interface | Use the header controls for Mini or Floating mode |
 
-Download the notarised DMG from the [Releases page](../../releases).
+The meter refresh rate is approximately 3 fps because the Antelope server reports cyclic state at roughly 300 ms intervals.
 
-### Step 2: Install the App
+## If the app is offline
 
-1. Double-click the downloaded `.dmg` file to mount it
-2. Drag **MK-OrbitControl.app** into your **Applications** folder
-3. Eject the DMG when done (right-click → Eject in Finder)
+Check these in order:
 
-### Step 3: Complete First-Run Setup
+1. Confirm the interface is powered on, connected, and visible in the official Antelope Control Panel.
+2. Confirm Antelope Launcher is running.
+3. Click **Reconnect** in MK-OrbitControl.
+4. If it remains offline, use **Restart Server** and allow the app to reconnect.
+5. If your model has not been validated, [report the result](https://github.com/mks-devx/MK-OrbitControl/issues) rather than repeatedly changing outputs at an audible level.
 
-Open MK-OrbitControl and click **Run Setup** if the setup notice appears. It extracts the required modules from the Antelope software already installed on your Mac. No proprietary code is downloaded or included in the app.
+If setup reports that Antelope software is missing, install and open Antelope Launcher once, then run setup again. Do not disable Gatekeeper for an official release; redownload the DMG, verify its checksum, and report a persistent signing error. More detail is available in [docs/INSTALL.md](docs/INSTALL.md).
 
-If in-app setup cannot run after copying the app to Applications, use this Terminal fallback:
+## Security and safety model
 
-```bash
-bash "/Applications/MK-OrbitControl.app/Contents/Resources/setup.sh"
-```
+- The command bridge binds only to `127.0.0.1` and requires a random per-install authentication token.
+- Commands are restricted to validated monitor actions and bounded volume values.
+- The app remains silent until it receives a valid initial device state.
+- No privileged helper, launch daemon, analytics service, or cloud account is installed by MK-OrbitControl.
+- Release packaging audits the app for private paths, personal email addresses, credential-like content, dependency drift, and required third-party licences.
 
-You should see `Extracted X modules` followed by `Done!`.
+Audio hardware is still the final authority. Keep physical monitor controls accessible and begin at a conservative level when testing an unverified device or output mapping.
 
-> **Note:** If Terminal says the volume is not found, re-mount the DMG by double-clicking it again.
+Please report security issues privately using the process in [SECURITY.md](SECURITY.md), not through a public issue.
 
-### Step 4: Control Your Outputs
-
-Open **MK-OrbitControl** from your Applications folder. A speaker icon will appear in your menu bar (top right of the screen). Click it to open the controller.
-
-> Ad-hoc local builds may require right-click → Open. Official GitHub Release builds are Developer ID signed and notarised.
-
----
-
-## Usage
-
-### Basic Controls
-- **Click** the menu bar icon to open the popover
-- **Drag** the rotary knob or slider to adjust volume
-- **Click − / +** beside the knob for repeatable stepped adjustments
-- **Click** DIM / MUTE / MONO buttons to toggle
-- **Click** MON A, MON B, HP 1, or HP 2 to switch outputs
-
-### Presets
-- **Click** a preset slot (A–D) to recall
-- **Right-click** a preset slot to save the current state
-
-### Hotkeys
-1. Open **Settings** (gear icon)
-2. Go to the **Hotkeys** tab
-3. Click the record button next to an action
-4. Press your desired key combination
-5. Hotkeys work globally from any application
-
-### MIDI Learn
-1. Open **Settings** → **MIDI** tab
-2. Click **Learn** next to the control you want to map
-3. Move a knob/fader on your MIDI controller
-4. The CC is captured and saved automatically
-
-### Display Modes
-- **Mini mode** — click the minimize icon in the popover header
-- **Floating window** — click the window icon in the popover header; drag to position anywhere
-- **Return to popover** — close the floating window or click the menu bar icon
-
-## Troubleshooting
-
-### "Application is not supported on this Mac"
-
-This message can indicate an incompatible CPU architecture, an unsupported macOS version, a damaged download, or a signing problem. Confirm that the Mac is Apple Silicon and runs macOS 13 or later, then download the DMG again from the official Releases page and verify its checksum.
-
-**For an official release:**
-1. Delete the rejected copy.
-2. Download it again from the official Releases page.
-3. Verify the published SHA-256 checksum.
-4. If macOS still rejects it, open an issue rather than disabling Gatekeeper.
-
-**For a local source build only:**
-1. Open Finder → Applications
-2. Right-click **MK-OrbitControl.app**
-3. Select **"Open"** from the context menu
-4. Click **"Open"** in the dialog
-5. After this, the app opens normally with a double-click
-
-### App Shows "Offline"
-
-The app can't find your Antelope device. Check in order:
-
-1. **Antelope Launcher running?** — Look for the Antelope icon in your menu bar. If missing, open it from Applications. Enable auto-start in System Settings → General → Login Items.
-
-2. **Device connected and powered on?** — Ensure the Thunderbolt cable is firmly plugged in. The device should show as connected in the Antelope Control Panel.
-
-3. **Click the reconnect button** — the circular arrow icon in the app header forces an immediate device re-scan.
-
-4. **Restart the server** — when offline, an orange warning icon appears next to the reconnect button. Click it to relaunch Antelope Launcher and re-initialize the server automatically. Also available in Settings → General.
-
-### Setup Script: "Antelope software not found"
-
-The setup script needs Antelope Launcher installed to extract modules.
-
-1. Download and install [Antelope Launcher](https://www.antelopeaudio.com/downloads/)
-2. Open it at least once (this installs the AntelopeAudioServer daemon)
-3. Run the setup script again
-
-### Setup Script: "already extracted"
-
-Normal — the modules are already set up. Just launch the app.
-
-### No Icon in Menu Bar
-
-- The app runs as a menu bar app (no Dock icon). Look for the speaker icon in the top-right area of your screen.
-- If no icon appears after 5 seconds, quit and relaunch.
-- On macOS 15: check System Settings → Control Center → Menu Bar Only to ensure it's not hidden behind the notch.
-
-### Peak Meters Not Moving
-
-Peak meters update at ~3 fps — this is limited by the Antelope server's cyclic report rate (~300ms). This is normal and expected.
-
----
-
-## Architecture
-
-MK-OrbitControl communicates with the Antelope Audio server running locally on your Mac via TCP. The protocol was reverse-engineered for interoperability under EU Directive 2009/24/EC.
-
-```
-┌─────────────────┐  TCP :17580  ┌─────────────┐  RemoteDevice API  ┌──────────────────────┐
-│ MK-OrbitControl │ ───────────► │  bridge.py  │ ─────────────────► │ AntelopeAudioServer  │
-│    (SwiftUI)    │              └─────────────┘                    │ dynamic :2020–2100   │
-└─────────────────┘                                                  └──────────┬───────────┘
-                                                                               │ Thunderbolt
-                                                                               ▼
-                                                                          ┌──────────┐
-                                                                          │ Hardware │
-                                                                          └──────────┘
-```
-
-## Repository Structure
+## How it works
 
 ```text
-Config/                         App metadata and the canonical app icon
-Sources/MKOrbitControl/
-  Application/                  App lifecycle and window coordination
-  Domain/                       Volume, channel, preset, and device state
-  Infrastructure/               Antelope state and command transports
-  Input/                        Global hotkey and MIDI control
-  Services/                     Update checking
-  UI/                           Menu, settings, floating window, HUD, themes
+┌──────────────────┐   authenticated TCP    ┌────────────────┐   device API    ┌──────────────────────┐
+│ MK-OrbitControl  │ ─── 127.0.0.1:17580 ─► │ Local bridge   │ ──────────────► │ AntelopeAudioServer  │
+│ SwiftUI menu app │                        │ Python 3.8      │                 │ local dynamic port   │
+└──────────────────┘                        └────────────────┘                 └──────────┬───────────┘
+                                                                                       │ Thunderbolt
+                                                                                       ▼
+                                                                                Synergy Core hardware
+```
+
+The local bridge exists because the installed Antelope modules currently require Python 3.8 bytecode compatibility. Python 3.8 is end-of-life, so replacing this layer remains an important long-term hardening goal.
+
+The device protocol was reverse engineered solely for interoperability. MK-OrbitControl is not affiliated with, endorsed by, or supported by Antelope Audio.
+
+<details>
+<summary><strong>Protocol and channel reference</strong></summary>
+
+The bridge uses length-prefixed JSON messages and exposes only these commands:
+
+| Command | Parameters |
+|---|---|
+| `set_volume` | channel 0–6, value 0–96 |
+| `set_mute` | channel, 0/1 |
+| `set_dim` | channel, 0/1 |
+| `set_mono` | channel, 0/1 |
+
+Volume values are inverted: `0` is 0 dB, `95` is −95 dB, and `96` is −∞. The known Orion Studio III mapping is MON A `0`, HP 1 `1`, HP 2 `2`, and MON B `5`; indices `3`, `4`, and `6` remain unmapped.
+
+</details>
+
+## Build and test
+
+### Prerequisites
+
+- Xcode and its command-line tools
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen)
+- Python 3.8.20 with `zeroconf` and `netifaces`
+- Antelope Launcher for local module extraction and hardware testing
+
+```bash
+git clone https://github.com/mks-devx/MK-OrbitControl.git
+cd MK-OrbitControl
+
+brew install xcodegen pyenv
+pyenv install 3.8.20
+"$HOME/.pyenv/versions/3.8.20/bin/python3.8" -m pip install zeroconf netifaces
+
+xcodegen generate --spec project.yml
+bash setup.sh
+swift test
+python3 -m unittest discover -s Tests -p 'test_*.py'
+bash scripts/privacy-audit.sh
+```
+
+To build an unsigned local audit package:
+
+```bash
+ALLOW_UNTAGGED_BUILD=1 ALLOW_DIRTY_BUILD=1 bash build-dist.sh
+```
+
+Public packages must come from a clean checkout at an annotated `vX.Y.Z` tag. Developer ID distribution also requires a valid signing identity and Apple notarisation profile. The packaging script rejects an unnotarised Developer ID build.
+
+### Repository layout
+
+```text
+Config/                         App metadata and canonical artwork
+Sources/MKOrbitControl/         Swift application source
 Tests/                          Swift and Python regression tests
-docs/                           Installation and archived design history
-bridge.py                       Authenticated local Python command bridge
+docs/                           Installation and design documentation
+licenses/                       Third-party licence texts
+scripts/                        Build, release, and privacy validation
+bridge.py                       Authenticated local command bridge
 setup.sh                        Local Antelope module extraction
 build-dist.sh                   Reproducible app and DMG packaging
 ```
 
-Generated builds belong in `dist-bundled/`, which is intentionally ignored and must not be committed.
-
-### Tech Stack
-
-| Component | Technology |
-|-----------|------------|
-| App | Swift 6 / SwiftUI — menu bar popover, floating window, settings |
-| Bridge | Python 3.8 compatibility daemon on localhost port 17580; commands require a per-install authentication token |
-| Hotkeys | HotKey (Swift package) — Carbon-based global keyboard shortcuts |
-| MIDI | CoreMIDI — native macOS MIDI framework |
-| Protocol | TCP with 4-byte big-endian length prefix + JSON payload |
-
-### Command Protocol
-
-| Command | Description | Parameters |
-|---------|-------------|------------|
-| `set_volume` | Set output volume | channel (0–6), value (0–96) |
-| `set_mute` | Toggle mute | channel, 0/1 |
-| `set_dim` | Toggle dim | channel, 0/1 |
-| `set_mono` | Toggle mono | channel, 0/1 |
-
-Volume mapping: 0 = 0 dB (loudest), 95 = -95 dB, 96 = -∞ (auto-mutes).
-
-### Channel Mapping (Orion Studio III)
-
-| Index | Output |
-|-------|--------|
-| 0 | MON A |
-| 1 | HP 1 |
-| 2 | HP 2 |
-| 5 | MON B |
-| 3, 4, 6 | Unknown / unmapped |
-
-### Safety
-
-- Restricts commands to volume (0–96), mute, dim, and mono on known output channels
-- Keeps the command bridge bound to localhost and requires a per-install 64-character authentication token stored with owner-only permissions
-- Starts from silence until the first valid device state is received
-- No proprietary code is distributed — modules are extracted from the user's own installation
-
-> Python 3.8.20 is currently required because the Antelope modules are Python 3.8 bytecode. Python 3.8 is end-of-life, so replacing this compatibility layer is a release-hardening priority.
-
----
-
-## Build from Source
-
-```bash
-# Clone the repository
-git clone https://github.com/mks-devx/MK-OrbitControl.git
-cd MK-OrbitControl
-
-# Install the project generator
-brew install xcodegen
-
-# Generate the Xcode project and build the app
-xcodegen generate --spec project.yml
-xcodebuild -project MKOrbitControl.xcodeproj -scheme MKOrbitControl \
-  -configuration Release -derivedDataPath /tmp/MKOrbitControl-Release \
-  -destination 'platform=macOS,arch=arm64' CODE_SIGNING_ALLOWED=NO build
-
-# Install Python 3.8 for the bridge daemon (one time)
-brew install pyenv
-pyenv install 3.8.20
-~/.pyenv/versions/3.8.20/bin/python3.8 -m pip install zeroconf netifaces
-
-# Run setup to extract Antelope modules
-bash setup.sh
-
-# Run the unsigned development build
-open /tmp/MKOrbitControl-Release/Build/Products/Release/MK-OrbitControl.app
-```
-
-### Build a Local Audit DMG
-
-```bash
-ALLOW_UNTAGGED_BUILD=1 ALLOW_DIRTY_BUILD=1 bash build-dist.sh
-# Output: ~/Desktop/MK-OrbitControl-UNRELEASED-{commit}.dmg
-```
-
-The script verifies the pinned dependency manifest, generates the Xcode project, builds an arm64 app, creates a relocatable Python 3.8 runtime, neutralises private build-machine paths, bundles third-party licences, tests the runtime, audits the artifact, signs nested code, and creates a DMG plus SHA-256 checksum.
-
-Public packages must be built from a clean checkout at an exact annotated `vX.Y.Z` tag. Set `SIGN_IDENTITY` to a Developer ID Application identity and `NOTARY_PROFILE` to a `notarytool` keychain profile. The script refuses a Developer ID build without notarisation. Untagged or dirty builds require the explicit local-audit flags shown above and are visibly labelled `UNRELEASED`.
-
----
-
-## Uninstall
-
-```bash
-# Remove the app
-rm -rf /Applications/MK-OrbitControl.app
-
-# (Optional) Remove extracted compatibility modules and bridge
-rm -rf "$HOME/Library/Application Support/MK-OrbitControl"
-
-# (Optional) Remove saved preferences after disabling Launch at Login in the app
-defaults delete com.mkdevices.orbitcontrol 2>/dev/null || true
-```
-
-Disable **Launch at Login** in Settings before deleting the app. MK-OrbitControl installs no privileged helper, launch daemon, or system service; Antelope Launcher manages its own separate services.
-
----
+Generated packages belong in the ignored `dist-bundled/` directory and must not be committed.
 
 ## Contributing
 
-Contributions welcome:
+Focused contributions are welcome, especially:
 
-- **Device testing** — try it on your Synergy Core device and [open an issue](../../issues) with your results
-- **Channel mapping** — help identify correct output indices for untested devices
-- **Bug reports** — include your device model, macOS version, and any console output
-- **Interface work** — follow the repository's [design direction](docs/DESIGN.md)
+- controlled device compatibility reports and channel mappings
+- reproducible connection or recovery bugs
+- accessibility, contrast, and macOS behaviour fixes
+- tests that protect existing monitor-control behaviour
 
----
+Before submitting a change, read [SECURITY.md](SECURITY.md), follow the established [design direction](docs/DESIGN.md), run the test and privacy commands above, and avoid posting logs that contain personal paths, email addresses, serial numbers, tokens, or account data.
 
-## Changelog
+## Release history
 
-### v1.5.0 — First Signed Public Beta
-- First Developer ID signed and Apple-notarised public DMG
-- Release packages are audited for local paths, personal email addresses, credential-like content, and required third-party licences
-- Hardened local bridge authentication and loopback-only command access
-- Improved connection recovery, output controls, appearance options, transparency, layout, and icon consistency
-- Removed the discontinued widget integration and cleaned generated/obsolete repository files
-- CI now tests Swift and Python code, audits reachable Git history, and runs CodeQL for both languages
+**v1.5.0** is the first signed and Apple-notarised public beta. It introduced authenticated local bridge access, hardened connection recovery, improved output controls and appearance options, removed the discontinued widget experiment, and added release privacy checks plus Swift, Python, and CodeQL validation.
 
-### v1.4 — Server Restart
-- **Restart Server button** — when offline, an orange indicator appears in the header to relaunch the Antelope server with one click (no admin password needed)
-- **Restart in Settings** — also available under Settings → General → Restart Antelope Server
-- Opens Antelope Launcher to re-initialize the server, then auto-reconnects
+See [GitHub Releases](https://github.com/mks-devx/MK-OrbitControl/releases) for downloads, checksums, and release notes.
 
-### v1.3 — Auto-reconnect
-- Bridge daemon now auto-reconnects after connection drops during extended uptime
-- No more manual bridge restarts after sleep/wake or long sessions
+## Uninstall
 
-### v1.2 — Interface and Local Packaging Update
-- Fixed "application not supported" error on macOS 15.7+
-- Added ad-hoc signing for local development packages; this is not Developer ID distribution signing
-- Added local DMG packaging
-- Added `docs/INSTALL.md` with step-by-step troubleshooting
-- Mini mode, floating window, MIDI learn
-- Peak hold meters, 12 themes, 8 fonts, 9 menu bar icons
-- Global hotkeys, volume HUD, night mode
-- Settings panel with tabbed sidebar
-- Auto update checker, multi-device detection
+1. Disable **Launch at Login** in MK-OrbitControl Settings.
+2. Move **MK-OrbitControl.app** from Applications to the Bin.
+3. Optionally remove its support folder from `~/Library/Application Support/MK-OrbitControl` and its saved preferences.
 
-### v1.1
-- Mini mode, check for updates
+MK-OrbitControl installs no privileged helper, launch daemon, or system service. Antelope Launcher's own services are separate and are not removed.
 
-### v1.0
-- Initial release — volume, mute, dim, mono, A/B switching, presets
+## Licence and acknowledgements
 
----
+MK-OrbitControl is available under the [MIT Licence](LICENSE). Distribution packages include [third-party notices](THIRD_PARTY_NOTICES.md) and the complete applicable licence texts.
 
-## Disclaimer
-
-Not affiliated with, endorsed by, or associated with Antelope Audio. All trademarks belong to their respective owners.
-
-This software uses the same command protocol as the official Control Panel and limits its bridge to monitor-control commands. Use conservative levels when testing an unverified device mapping.
-
----
-
-## License
-
-[MIT](LICENSE)
-
-Distribution packages also include [third-party notices](THIRD_PARTY_NOTICES.md) and the complete applicable licence texts.
+Antelope Audio and Synergy Core are trademarks of their respective owner. Their use here identifies compatible products and does not imply affiliation or endorsement.
